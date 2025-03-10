@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tab Session Saver</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 300px;
+      padding: 10px;
+    }
+    h1 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 16px;
+      margin-top: 15px;
+    }
+    input {
+      padding: 5px;
+      width: 70%;
+      margin-right: 5px;
+    }
+    button {
+      padding: 5px 10px;
+      background-color: #0060df;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #003eaa;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .session-link {
+      cursor: pointer;
+      color: #0060df;
+      text-decoration: underline;
+      flex-grow: 1;
+    }
+    .delete-btn {
+      background-color: #d70022;
+      margin-left: 10px;
+      font-size: 12px;
+      padding: 3px 6px;
+    }
+    .delete-btn:hover {
+      background-color: #a4000f;
+    }
+    .empty-list {
+      color: #737373;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tab Session Saver</h1>
+  <div>
+    <input type="text" id="sessionName" placeholder="Enter session name" />
+    <button id="saveBtn">Save</button>
+  </div>
+  <h2>Saved Sessions</h2>
+  <div id="sessionsList"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

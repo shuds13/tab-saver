@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "Tab Session Saver",
+  "version": "1.0",
+  "description": "Save and restore your browser tab sessions",
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "browser_action": {
+    "default_title": "Tab Session Saver",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon-48.png"
+    }
+  },
+  "icons": {
+    "48": "icon-48.png"
+  }
+}
