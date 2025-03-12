@@ -2,43 +2,88 @@
 document.addEventListener('DOMContentLoaded', function() {
 
   // Create a dedicated container for Undo messages so they persist even when there are no sessions
-  const undoContainer = document.createElement('div');
-  undoContainer.id = 'undoContainer';
-  document.body.appendChild(undoContainer);
+  const undoContainer = document.getElementById('undoContainer');
 
   // Get references to DOM elements
   const sessionNameInput = document.getElementById('sessionName');
   const saveButton = document.getElementById('saveBtn');
   const sessionsListDiv = document.getElementById('sessionsList');
 
+  // Add status display element below the input+button row but before "Saved Sessions" heading
+  const saveStatusDiv = document.createElement('div');
+  saveStatusDiv.id = 'saveStatus';
+  saveStatusDiv.style.marginTop = '5px';
+  saveStatusDiv.style.color = '#666';
+  // Insert it right after the div containing the input and save button
+  saveButton.parentNode.after(saveStatusDiv);
+
   // Initialize by loading saved sessions
   loadAndDisplaySessions();
+  updateSaveStatus();
 
-  // Add event listener to the save button and hitting Enter
-  saveButton.addEventListener('click', saveCurrentSession);
-
-  sessionNameInput.addEventListener('keydown', function(event) {
-      if (event.key === 'Enter') {
-          event.preventDefault(); // Prevent form submission (if any)
-          saveCurrentSession();
-      }
+  // Add event listener to the save button
+  saveButton.addEventListener('click', function() {
+    // Only proceed if there's text in the input field
+    if (sessionNameInput.value.trim() !== '') {
+      saveCurrentSession();
+    }
   });
 
+  // Handle Enter key in the input field
+  sessionNameInput.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Prevent form submission
+      // Only proceed if there's text in the input field
+      if (sessionNameInput.value.trim() !== '') {
+        saveCurrentSession();
+      }
+    }
+  });
+
+  // Simple function to update status text
+  function updateSaveStatus() {
+    // First check for highlighted tabs (selected tabs)
+    browser.tabs.query({currentWindow: true, highlighted: true})
+      .then(function(highlightedTabs) {
+        if (highlightedTabs.length > 1) {
+          saveStatusDiv.textContent = `Will save ${highlightedTabs.length} selected tabs`;
+        } else {
+          // If no selection, will save all tabs
+          browser.tabs.query({currentWindow: true})
+            .then(function(allTabs) {
+              saveStatusDiv.textContent = `Will save all ${allTabs.length} tabs`;
+            });
+        }
+      });
+  }
 
   // Function to save current window's tabs
   function saveCurrentSession() {
     const sessionName = sessionNameInput.value.trim();
 
     if (!sessionName) {
-      alert('Please enter a name for this session');
+      // Skip saving if no name provided - no alert window
       return;
     }
 
-    // Get current window with its tabs
-    browser.windows.getCurrent({ populate: true })
-      .then(function(currentWindow) {
+    // First determine if we have selected tabs
+    browser.tabs.query({currentWindow: true, highlighted: true})
+      .then(function(highlightedTabs) {
+        let tabsPromise;
+
+        if (highlightedTabs.length > 1) {
+          // Use selected tabs
+          tabsPromise = Promise.resolve(highlightedTabs);
+        } else {
+          // Use all tabs
+          tabsPromise = browser.tabs.query({currentWindow: true});
+        }
+
+        return tabsPromise;
+      })
+      .then(function(tabsToSave) {
         // Extract needed tab information
-        const tabsData = currentWindow.tabs.map(tab => ({
+        const tabsData = tabsToSave.map(tab => ({
           url: tab.url,
           title: tab.title
         }));
@@ -47,11 +92,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const sessionData = {
           name: sessionName,
           date: new Date().toISOString(),
-          tabs: tabsData
+          tabs: tabsData,
+          // Flag if this was selected tabs
+          selectedOnly: tabsToSave.length > 1 && tabsToSave.some(tab => !tab.highlighted)
         };
 
         // Get existing saved sessions
-        browser.storage.local.get('savedSessions')
+        return browser.storage.local.get('savedSessions')
           .then(function(result) {
             // Get existing sessions or initialize empty array
             const savedSessions = result.savedSessions || [];
@@ -61,24 +108,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Save updated sessions array
             return browser.storage.local.set({ savedSessions: savedSessions });
-          })
-          .then(function() {
-            // Clear input field
-            sessionNameInput.value = '';
-
-            // Reload sessions list
-            loadAndDisplaySessions();
-
-            console.log('Session saved successfully');
-          })
-          .catch(function(error) {
-            console.error('Error saving session:', error);
-            alert('Error saving session: ' + error.message);
           });
       })
+      .then(function() {
+        // Clear input field
+        sessionNameInput.value = '';
+
+        // Update status
+        updateSaveStatus();
+
+        // Reload sessions list
+        loadAndDisplaySessions();
+
+
+        console.log('Session saved successfully');
+      })
       .catch(function(error) {
-        console.error('Error getting current window:', error);
-        alert('Error getting current window: ' + error.message);
+        console.error('Error saving session:', error);
+        // Use a non-blocking notification instead of alert
+        const errorNotice = document.createElement('div');
+        errorNotice.textContent = 'Error saving session';
+        errorNotice.style.color = 'red';
+        errorNotice.style.padding = '5px';
+        saveStatusDiv.parentNode.insertBefore(errorNotice, saveStatusDiv.nextSibling);
+        setTimeout(() => errorNotice.remove(), 3000);
       });
   }
 
@@ -113,7 +166,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
           // Session name and info
           const sessionInfo = document.createElement('div');
-          sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
+
+          // Add indicator if it was selected tabs
+          if (session.selectedOnly) {
+            sessionInfo.textContent = `${session.name} (${session.tabs.length} selected tabs)`;
+          } else {
+            sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
+          }
+
           sessionInfo.style.cursor = 'pointer';
           sessionInfo.style.color = '#0060df';
 
@@ -152,7 +212,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to open a session in a new window
   function openSessionInNewWindow(session) {
       if (!session.tabs || session.tabs.length === 0) {
-          alert('This session has no tabs to open');
+          // Use non-blocking notification instead of alert
+          const errorNotice = document.createElement('div');
+          errorNotice.textContent = 'This session has no tabs to open';
+          errorNotice.style.color = 'red';
+          errorNotice.style.padding = '5px';
+          sessionsListDiv.parentNode.insertBefore(errorNotice, sessionsListDiv);
+          setTimeout(() => errorNotice.remove(), 3000);
           return;
       }
 
@@ -166,7 +232,13 @@ document.addEventListener('DOMContentLoaded', function() {
           })
           .catch(function(error) {
               console.error('Error opening session:', error);
-              alert('Error opening session: ' + error.message);
+              // Use non-blocking notification instead of alert
+              const errorNotice = document.createElement('div');
+              errorNotice.textContent = 'Error opening session';
+              errorNotice.style.color = 'red';
+              errorNotice.style.padding = '5px';
+              sessionsListDiv.parentNode.insertBefore(errorNotice, sessionsListDiv);
+              setTimeout(() => errorNotice.remove(), 3000);
           });
   }
 
@@ -189,7 +261,13 @@ document.addEventListener('DOMContentLoaded', function() {
           })
           .catch(error => {
               console.error('Error deleting session:', error);
-              alert('Error deleting session: ' + error.message);
+              // Use non-blocking notification instead of alert
+              const errorNotice = document.createElement('div');
+              errorNotice.textContent = 'Error deleting session';
+              errorNotice.style.color = 'red';
+              errorNotice.style.padding = '5px';
+              sessionsListDiv.parentNode.insertBefore(errorNotice, sessionsListDiv);
+              setTimeout(() => errorNotice.remove(), 3000);
           });
   }
 

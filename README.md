@@ -16,5 +16,3 @@ Simple Firefox extension to quickly save a window and it's tabs to reopen at any
   - dont open dialog if click save on empty box
 
 - Bring to top when open (or when click resave)
-- if tabs are selected just save those
-- Orig idea that delete button turns to undo - but that has not worked.
