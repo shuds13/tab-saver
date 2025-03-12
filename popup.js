@@ -116,6 +116,15 @@ document.addEventListener('DOMContentLoaded', function() {
             openSessionInNewWindow(session);
           });
 
+          // Overwrite button (placed immediately after the session name)
+          const overwriteButton = document.createElement('button');
+          overwriteButton.textContent = 'Save';
+          overwriteButton.style.marginLeft = 'auto';  // Aligns it like the Delete button
+          overwriteButton.style.padding = '2px 8px';
+          overwriteButton.addEventListener('click', function() {
+            overwriteSession(index);
+          });
+
           // Delete button
           const deleteButton = document.createElement('button');
           deleteButton.textContent = 'Delete';
@@ -130,6 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           // Add elements to list item
           listItem.appendChild(sessionInfo);
+          listItem.appendChild(overwriteButton);
           listItem.appendChild(deleteButton);
           sessionList.appendChild(listItem);
         });
@@ -163,6 +173,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Error opening session: ' + error.message);
             });
     }
+
+
+  function overwriteSession(index) {
+    browser.tabs.query({ currentWindow: true })
+      .then(function(tabs) {
+        const newTabsData = tabs.map(function(tab) {
+          return { url: tab.url, title: tab.title };
+        });
+        return browser.storage.local.get('savedSessions')
+          .then(function(result) {
+            let savedSessions = result.savedSessions || [];
+            if (index >= 0 && index < savedSessions.length) {
+              savedSessions[index].tabs = newTabsData;
+              savedSessions[index].date = new Date().toISOString();
+            }
+            return browser.storage.local.set({ savedSessions: savedSessions });
+          });
+      })
+      .then(function() {
+        loadAndDisplaySessions();
+      })
+      .catch(function(error) {
+        console.error("Error overwriting session:", error);
+        alert("Error overwriting" + error.message);
+      });
+  }
 
 
   // Function to delete a session
@@ -224,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Add Undo button to the UI
       undoMessage.appendChild(undoButton);
+
       sessionsListDiv.appendChild(undoMessage);
 
       // Auto-remove the Undo option after 5 seconds
