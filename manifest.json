@@ -11,10 +11,10 @@
     "default_title": "Tab Session Saver",
     "default_popup": "popup.html",
     "default_icon": {
-      "48": "icon-48.png"
+      "48": "icon.svg"
     }
   },
   "icons": {
-    "48": "icon-48.png"
+    "48": "icon.svg"
   }
 }
