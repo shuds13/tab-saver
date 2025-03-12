@@ -151,7 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Create a new window with ALL saved tabs at once
-        const allUrls = session.tabs.map(tab => tab.url);
+        // const allUrls = session.tabs.map(tab => tab.url);
+        const allUrls = session.tabs.map(tab => tab.url).filter(url => !url.startsWith('about:'));
 
         browser.windows.create({ url: allUrls })
             .then(function(newWindow) {
