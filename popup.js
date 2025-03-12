@@ -166,13 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           // Session name and info
           const sessionInfo = document.createElement('div');
-
-          // Add indicator if it was selected tabs
-          if (session.selectedOnly) {
-            sessionInfo.textContent = `${session.name} (${session.tabs.length} selected tabs)`;
-          } else {
-            sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
-          }
+          sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
 
           sessionInfo.style.cursor = 'pointer';
           sessionInfo.style.color = '#0060df';
