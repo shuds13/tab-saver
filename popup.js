@@ -8,10 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize by loading saved sessions
   loadAndDisplaySessions();
 
-  // Add event listener to the save button
-  saveButton.addEventListener('click', function() {
-    saveCurrentSession();
-  });
+  // Add event listener to the save button and hitting Enter
+  saveButton.addEventListener('click', saveCurrentSession);
+
+  sessionNameInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+          event.preventDefault(); // Prevent form submission (if any)
+          saveCurrentSession();
+      }
+});
+
 
   // Function to save current window's tabs
   function saveCurrentSession() {
