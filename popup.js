@@ -121,7 +121,9 @@ document.addEventListener('DOMContentLoaded', function() {
           deleteButton.textContent = 'Delete';
           deleteButton.style.marginLeft = '10px';
           deleteButton.style.padding = '2px 8px';
-
+          deleteButton.style.backgroundColor = '#d70022';  // Red color
+          deleteButton.onmouseover = () => deleteButton.style.backgroundColor = '#a4000f';
+          deleteButton.onmouseout = () => deleteButton.style.backgroundColor = '#d70022';
           deleteButton.addEventListener('click', function() {
             deleteSession(index);
           });
