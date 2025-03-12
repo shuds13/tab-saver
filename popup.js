@@ -1,5 +1,11 @@
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+
+  // Create a dedicated container for Undo messages so they persist even when there are no sessions
+  const undoContainer = document.createElement('div');
+  undoContainer.id = 'undoContainer';
+  document.body.appendChild(undoContainer);
+
   // Get references to DOM elements
   const sessionNameInput = document.getElementById('sessionName');
   const saveButton = document.getElementById('saveBtn');
@@ -16,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
           event.preventDefault(); // Prevent form submission (if any)
           saveCurrentSession();
       }
-});
+  });
 
 
   // Function to save current window's tabs
@@ -144,26 +150,28 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Function to open a session in a new window
-    function openSessionInNewWindow(session) {
-        if (!session.tabs || session.tabs.length === 0) {
-            alert('This session has no tabs to open');
-            return;
-        }
+  function openSessionInNewWindow(session) {
+      if (!session.tabs || session.tabs.length === 0) {
+          alert('This session has no tabs to open');
+          return;
+      }
 
-        // Create a new window with ALL saved tabs at once
-        // const allUrls = session.tabs.map(tab => tab.url);
-        const allUrls = session.tabs.map(tab => tab.url).filter(url => !url.startsWith('about:'));
+      // Create a new window with ALL saved tabs at once
+      // Filter out about: URLs as they may cause issues
+      const allUrls = session.tabs.map(tab => tab.url).filter(url => !url.startsWith('about:'));
 
-        browser.windows.create({ url: allUrls })
-            .then(function(newWindow) {
-                console.log('Created new window with ID:', newWindow.id);
-            })
-            .catch(function(error) {
-                console.error('Error opening session:', error);
-                alert('Error opening session: ' + error.message);
-            });
-    }
+      browser.windows.create({ url: allUrls })
+          .then(function(newWindow) {
+              console.log('Created new window with ID:', newWindow.id);
+          })
+          .catch(function(error) {
+              console.error('Error opening session:', error);
+              alert('Error opening session: ' + error.message);
+          });
+  }
 
+  // Variable to store the timeout ID for auto-removing undo message
+  let undoTimeoutId = null;
 
   // Function to delete a session
   function deleteSession(index) {
@@ -187,7 +195,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Function to show an inline Undo button
   function showUndoButton(deletedSession, index) {
-      const sessionsListDiv = document.getElementById('sessionsList');
+      const undoContainer = document.getElementById('undoContainer');
+
+      // Clear previous undo messages
+      undoContainer.innerHTML = '';
+
+      // If there was a previous timeout, clear it
+      if (undoTimeoutId) {
+          clearTimeout(undoTimeoutId);
+      }
 
       // Create undo message
       const undoMessage = document.createElement('div');
@@ -224,14 +240,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Add Undo button to the UI
       undoMessage.appendChild(undoButton);
-      sessionsListDiv.appendChild(undoMessage);
+      undoContainer.appendChild(undoMessage);
 
       // Auto-remove the Undo option after 5 seconds
-      setTimeout(() => {
+      undoTimeoutId = setTimeout(() => {
           if (undoMessage.parentNode) {
               undoMessage.remove();
           }
       }, 5000);
   }
-
 });
