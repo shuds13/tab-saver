@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get existing sessions or initialize empty array
             const savedSessions = result.savedSessions || [];
 
-            // Add new session
-            savedSessions.push(sessionData);
+            // Add new session to the beginning of the array
+            savedSessions.unshift(sessionData);
 
             // Save updated sessions array
             return browser.storage.local.set({ savedSessions: savedSessions });
