@@ -158,25 +158,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Function to delete a session
   function deleteSession(index) {
-    if (confirm('Are you sure you want to delete this session?')) {
       browser.storage.local.get('savedSessions')
-        .then(function(result) {
-          const savedSessions = result.savedSessions || [];
+          .then(result => {
+              let savedSessions = result.savedSessions || [];
+              const deletedSession = savedSessions[index]; // Store deleted session
 
-          // Remove the session at the specified index
-          savedSessions.splice(index, 1);
-
-          // Save updated sessions
-          return browser.storage.local.set({ savedSessions: savedSessions });
-        })
-        .then(function() {
-          // Reload sessions list
-          loadAndDisplaySessions();
-        })
-        .catch(function(error) {
-          console.error('Error deleting session:', error);
-          alert('Error deleting session: ' + error.message);
-        });
-    }
+              // Remove the session from the list
+              savedSessions.splice(index, 1);
+              return browser.storage.local.set({ savedSessions }).then(() => {
+                  loadAndDisplaySessions();
+                  showUndoButton(deletedSession, index); // Show Undo option
+              });
+          })
+          .catch(error => {
+              console.error('Error deleting session:', error);
+              alert('Error deleting session: ' + error.message);
+          });
   }
+
+  // Function to show an inline Undo button
+  function showUndoButton(deletedSession, index) {
+      const sessionsListDiv = document.getElementById('sessionsList');
+
+      // Create undo message
+      const undoMessage = document.createElement('div');
+      undoMessage.textContent = `Session "${deletedSession.name}" deleted. `;
+      undoMessage.style.marginTop = '10px';
+      undoMessage.style.color = '#ff0000';
+
+      // Create undo button
+      const undoButton = document.createElement('button');
+      undoButton.textContent = 'Undo';
+      undoButton.style.marginLeft = '5px';
+      undoButton.style.padding = '2px 6px';
+      undoButton.style.backgroundColor = '#0060df';
+      undoButton.style.color = '#fff';
+      undoButton.style.border = 'none';
+      undoButton.style.cursor = 'pointer';
+
+      // Restore session when Undo is clicked
+      undoButton.addEventListener('click', function () {
+          browser.storage.local.get('savedSessions')
+              .then(result => {
+                  let savedSessions = result.savedSessions || [];
+                  savedSessions.splice(index, 0, deletedSession); // Reinsert at original position
+                  return browser.storage.local.set({ savedSessions });
+              })
+              .then(() => {
+                  loadAndDisplaySessions(); // Refresh UI
+                  undoMessage.remove(); // Remove undo UI
+              })
+              .catch(error => {
+                  console.error('Error restoring session:', error);
+              });
+      });
+
+      // Add Undo button to the UI
+      undoMessage.appendChild(undoButton);
+      sessionsListDiv.appendChild(undoMessage);
+
+      // Auto-remove the Undo option after 5 seconds
+      setTimeout(() => {
+          if (undoMessage.parentNode) {
+              undoMessage.remove();
+          }
+      }, 5000);
+  }
+
 });
