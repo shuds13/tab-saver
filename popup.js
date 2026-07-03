@@ -189,7 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
           updateSelect.innerHTML =
             '<option value="" selected disabled hidden>Update</option>' +
             '<option value="overwrite">Overwrite</option>' +
-            '<option value="add">Add tabs</option>';
+            '<option value="add">Add tabs</option>' +
+            '<option value="addCurrent">Add current tab</option>';
           updateSelect.addEventListener('change', function() {
             const action = updateSelect.value;
             updateSelect.selectedIndex = 0; // reset back to the "Update" label
@@ -197,6 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
               overwriteSession(index);
             } else if (action === 'add') {
               addTabsToSession(index);
+            } else if (action === 'addCurrent') {
+              addCurrentTabToSession(index);
             }
           });
 
@@ -321,39 +324,50 @@ document.addEventListener('DOMContentLoaded', function() {
           });
   }
 
-  // Add tabs: merge the current window's tabs into a session, skipping URLs it
-  // already has.
+  // Merge a list of tabs into a session, skipping URLs it already has.
+  function mergeTabsIntoSession(index, tabsData) {
+      return browser.storage.local.get('savedSessions').then(function(result) {
+          const savedSessions = result.savedSessions || [];
+          if (index < 0 || index >= savedSessions.length) return;
+          const session = savedSessions[index];
+          const existingUrls = new Set((session.tabs || []).map(tab => tab.url));
+          let added = 0;
+          let skipped = 0;
+          tabsData.forEach(function(tab) {
+              if (existingUrls.has(tab.url)) {
+                  skipped++;
+                  return;
+              }
+              existingUrls.add(tab.url);
+              session.tabs.push(tab);
+              added++;
+          });
+          session.date = new Date().toISOString();
+          return browser.storage.local.set({ savedSessions }).then(function() {
+              loadAndDisplaySessions();
+              showNotice(`Added ${added} tab${added === 1 ? '' : 's'} to "${session.name}"` +
+                  (skipped ? `, skipped ${skipped} already saved` : ''));
+          });
+      });
+  }
+
+  // Add tabs: merge the current window's tabs into a session.
   function addTabsToSession(index) {
       queryTabsToSave()
-          .then(function(tabs) {
-              const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
-              return browser.storage.local.get('savedSessions').then(function(result) {
-                  const savedSessions = result.savedSessions || [];
-                  if (index < 0 || index >= savedSessions.length) return;
-                  const session = savedSessions[index];
-                  const existingUrls = new Set((session.tabs || []).map(tab => tab.url));
-                  let added = 0;
-                  let skipped = 0;
-                  tabsData.forEach(function(tab) {
-                      if (existingUrls.has(tab.url)) {
-                          skipped++;
-                          return;
-                      }
-                      existingUrls.add(tab.url);
-                      session.tabs.push(tab);
-                      added++;
-                  });
-                  session.date = new Date().toISOString();
-                  return browser.storage.local.set({ savedSessions }).then(function() {
-                      loadAndDisplaySessions();
-                      showNotice(`Added ${added} tab${added === 1 ? '' : 's'} to "${session.name}"` +
-                          (skipped ? `, skipped ${skipped} already saved` : ''));
-                  });
-              });
-          })
+          .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title }))))
           .catch(function(error) {
               console.error('Error adding tabs to session:', error);
               showNotice('Error adding tabs', true);
+          });
+  }
+
+  // Add current tab: merge only the active tab of the current window.
+  function addCurrentTabToSession(index) {
+      browser.tabs.query({ currentWindow: true, active: true })
+          .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title }))))
+          .catch(function(error) {
+              console.error('Error adding current tab to session:', error);
+              showNotice('Error adding current tab', true);
           });
   }
 
