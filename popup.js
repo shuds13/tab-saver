@@ -182,6 +182,24 @@ document.addEventListener('DOMContentLoaded', function() {
             openSessionInNewWindow(session, index);
           });
 
+          // Update dropdown: single click opens Overwrite / Add tabs
+          const updateSelect = document.createElement('select');
+          updateSelect.className = 'update-select';
+          updateSelect.title = 'Update this session with the current window';
+          updateSelect.innerHTML =
+            '<option value="">Update ▾</option>' +
+            '<option value="overwrite">Overwrite</option>' +
+            '<option value="add">Add tabs</option>';
+          updateSelect.addEventListener('change', function() {
+            const action = updateSelect.value;
+            updateSelect.selectedIndex = 0; // reset back to the "Update ▾" label
+            if (action === 'overwrite') {
+              overwriteSession(index);
+            } else if (action === 'add') {
+              addTabsToSession(index);
+            }
+          });
+
           // Delete button (red trash-bin icon)
           const deleteButton = document.createElement('button');
           deleteButton.className = 'btn-delete';
@@ -195,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
 
           listItem.appendChild(sessionInfo);
+          listItem.appendChild(updateSelect);
           listItem.appendChild(deleteButton);
           sessionList.appendChild(listItem);
         });
