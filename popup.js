@@ -188,9 +188,9 @@ document.addEventListener('DOMContentLoaded', function() {
           updateSelect.title = 'Update this session with the current window';
           updateSelect.innerHTML =
             '<option value="" selected disabled hidden>Update</option>' +
-            '<option value="overwrite">Overwrite</option>' +
             '<option value="add">Add tabs</option>' +
-            '<option value="addCurrent">Add current tab</option>';
+            '<option value="addCurrent">Add current tab</option>' +
+            '<option value="overwrite">Overwrite</option>';
           updateSelect.addEventListener('change', function() {
             const action = updateSelect.value;
             updateSelect.selectedIndex = 0; // reset back to the "Update" label
@@ -309,12 +309,24 @@ document.addEventListener('DOMContentLoaded', function() {
               return browser.storage.local.get('savedSessions').then(function(result) {
                   const savedSessions = result.savedSessions || [];
                   if (index < 0 || index >= savedSessions.length) return;
-                  const name = savedSessions[index].name;
-                  savedSessions[index].tabs = tabsData;
-                  savedSessions[index].date = new Date().toISOString();
+                  const session = savedSessions[index];
+                  const name = session.name;
+                  // Keep the pre-overwrite state so it can be restored via Undo
+                  const previousTabs = session.tabs;
+                  const previousDate = session.date;
+                  session.tabs = tabsData;
+                  session.date = new Date().toISOString();
                   return browser.storage.local.set({ savedSessions }).then(function() {
                       loadAndDisplaySessions();
-                      showNotice(`Updated "${name}" — now ${tabsData.length} tab${tabsData.length === 1 ? '' : 's'}`);
+                      showUndo(`Overwrote "${name}" — now ${tabsData.length} tab${tabsData.length === 1 ? '' : 's'}.`, function() {
+                          return browser.storage.local.get('savedSessions').then(function(result2) {
+                              const list = result2.savedSessions || [];
+                              if (index < 0 || index >= list.length) return;
+                              list[index].tabs = previousTabs;
+                              list[index].date = previousDate;
+                              return browser.storage.local.set({ savedSessions: list });
+                          });
+                      });
                   });
               });
           })
@@ -385,7 +397,14 @@ document.addEventListener('DOMContentLoaded', function() {
               savedSessions.splice(index, 1);
               return browser.storage.local.set({ savedSessions }).then(() => {
                   loadAndDisplaySessions();
-                  showUndoButton(deletedSession, index); // Show Undo option
+                  // Offer to undo by reinserting the session at its original position
+                  showUndo(`Session "${deletedSession.name}" deleted.`, function() {
+                      return browser.storage.local.get('savedSessions').then(result => {
+                          const list = result.savedSessions || [];
+                          list.splice(index, 0, deletedSession);
+                          return browser.storage.local.set({ savedSessions: list });
+                      });
+                  });
               });
           })
           .catch(error => {
@@ -400,8 +419,9 @@ document.addEventListener('DOMContentLoaded', function() {
           });
   }
 
-  // Function to show an inline Undo button
-  function showUndoButton(deletedSession, index) {
+  // Show an inline Undo message with a button that runs onUndo (which returns a
+  // promise) when clicked. Auto-dismisses after 5 seconds.
+  function showUndo(message, onUndo) {
       const undoContainer = document.getElementById('undoContainer');
 
       // Clear previous undo messages
@@ -414,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Create undo message
       const undoMessage = document.createElement('div');
-      undoMessage.textContent = `Session "${deletedSession.name}" deleted. `;
+      undoMessage.textContent = message + ' ';
       undoMessage.style.marginTop = '10px';
       undoMessage.style.color = '#ff0000';
 
@@ -428,20 +448,15 @@ document.addEventListener('DOMContentLoaded', function() {
       undoButton.style.border = 'none';
       undoButton.style.cursor = 'pointer';
 
-      // Restore session when Undo is clicked
+      // Run the caller's undo action, then refresh the UI
       undoButton.addEventListener('click', function () {
-          browser.storage.local.get('savedSessions')
-              .then(result => {
-                  let savedSessions = result.savedSessions || [];
-                  savedSessions.splice(index, 0, deletedSession); // Reinsert at original position
-                  return browser.storage.local.set({ savedSessions });
-              })
+          Promise.resolve(onUndo())
               .then(() => {
-                  loadAndDisplaySessions(); // Refresh UI
-                  undoMessage.remove(); // Remove undo UI
+                  loadAndDisplaySessions();
+                  undoMessage.remove();
               })
               .catch(error => {
-                  console.error('Error restoring session:', error);
+                  console.error('Error undoing action:', error);
               });
       });
 
