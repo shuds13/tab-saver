@@ -32,6 +32,20 @@ document.addEventListener('DOMContentLoaded', function() {
     window.close(); // close the popup so the page has focus
   });
 
+  // Close any open row menu when clicking outside a trigger or menu
+  document.addEventListener('click', function(event) {
+    if (!event.target.closest('.options-trigger') && !event.target.closest('.row-menu')) {
+      closeAllRowMenus();
+    }
+  });
+
+  // Hide every open per-row action menu
+  function closeAllRowMenus() {
+    sessionsListDiv.querySelectorAll('.row-menu').forEach(function(menu) {
+      menu.style.display = 'none';
+    });
+  }
+
   // Add event listener to the save button
   saveButton.addEventListener('click', function() {
     // Only proceed if there's text in the input field
@@ -173,6 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
           const listItem = document.createElement('li');
           listItem.className = 'session-item';
 
+          // Top row: session name + Options button
+          const row = document.createElement('div');
+          row.className = 'session-row';
+
           // Session name — click to open in a new window
           const sessionInfo = document.createElement('div');
           sessionInfo.className = 'session-name';
@@ -182,42 +200,41 @@ document.addEventListener('DOMContentLoaded', function() {
             openSessionInNewWindow(session, index);
           });
 
-          // Update dropdown: single click opens Overwrite / Add tabs
-          const updateSelect = document.createElement('select');
-          updateSelect.className = 'update-select';
-          updateSelect.title = 'Update this session with the current window';
-          updateSelect.innerHTML =
-            '<option value="" selected disabled hidden>Update</option>' +
-            '<option value="add">Add tabs</option>' +
-            '<option value="addCurrent">Add current tab</option>' +
-            '<option value="overwrite">Overwrite</option>';
-          updateSelect.addEventListener('change', function() {
-            const action = updateSelect.value;
-            updateSelect.selectedIndex = 0; // reset back to the "Update" label
-            if (action === 'overwrite') {
-              overwriteSession(index);
-            } else if (action === 'add') {
-              addTabsToSession(index);
-            } else if (action === 'addCurrent') {
-              addCurrentTabToSession(index);
-            }
+          // Options button (⋮) toggles this row's action menu
+          const optionsButton = document.createElement('button');
+          optionsButton.className = 'options-trigger';
+          optionsButton.textContent = '⋮';
+          optionsButton.title = 'Actions';
+          optionsButton.setAttribute('aria-label', 'Session actions');
+
+          // The action menu (rendered inline so it can't clip at the popup edge)
+          const menu = document.createElement('div');
+          menu.className = 'row-menu';
+
+          function addMenuItem(label, onClick, extraClass) {
+            const item = document.createElement('button');
+            item.textContent = label;
+            if (extraClass) item.className = extraClass;
+            item.addEventListener('click', onClick);
+            menu.appendChild(item);
+          }
+
+          addMenuItem('Add tabs', function() { addTabsToSession(index); });
+          addMenuItem('Add current tab', function() { addCurrentTabToSession(index); });
+          // Destructive actions, separated and shown in red
+          addMenuItem('Overwrite', function() { overwriteSession(index); }, 'danger menu-sep');
+          addMenuItem('Delete', function() { deleteSession(index); }, 'danger');
+
+          optionsButton.addEventListener('click', function() {
+            const isOpen = menu.style.display === 'block';
+            closeAllRowMenus();
+            if (!isOpen) menu.style.display = 'block';
           });
 
-          // Delete button (red trash-bin icon)
-          const deleteButton = document.createElement('button');
-          deleteButton.className = 'btn-delete';
-          deleteButton.title = 'Delete session';
-          deleteButton.setAttribute('aria-label', 'Delete session');
-          deleteButton.innerHTML =
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">' +
-            '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
-          deleteButton.addEventListener('click', function() {
-            deleteSession(index);
-          });
-
-          listItem.appendChild(sessionInfo);
-          listItem.appendChild(updateSelect);
-          listItem.appendChild(deleteButton);
+          row.appendChild(sessionInfo);
+          row.appendChild(optionsButton);
+          listItem.appendChild(row);
+          listItem.appendChild(menu);
           sessionList.appendChild(listItem);
         });
 

@@ -115,9 +115,7 @@
     }
     /* Saved-session rows — the whole block between dividers highlights on hover */
     .session-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: block;
       padding: 8px 6px;
       border-bottom: 1px solid #ddd;
     }
@@ -132,38 +130,63 @@
     .session-name:hover {
       text-decoration: underline;
     }
-    .update-select {
-      width: 6em;
-      margin-left: 10px;
-      font-size: 12px;
-      padding: 3px 6px;
-      color: #0060df;
-      background-color: #fff;
-      border: 1px solid #0060df;
-      border-radius: 3px;
-      cursor: pointer;
+    .session-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .update-select:hover {
-      background-color: #eef2ff;
-    }
-    .btn-delete {
+    .options-trigger {
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-left: 10px;
+      font-size: 20px;
+      line-height: 1;
+      color: #555;
       background: none;
       border: none;
-      color: #d70022;
-      margin-left: 10px;
-      padding: 4px;
-      border-radius: 4px;
+      padding: 0;
+      border-radius: 50%;
       cursor: pointer;
     }
-    .btn-delete:hover {
-      background-color: #fbd6d9;
-      color: #a4000f;
+    .options-trigger:hover {
+      background-color: #e0e0e0;
+      color: #0060df;
     }
-    .btn-delete svg {
+    /* Inline action menu opened from the Options button */
+    .row-menu {
+      display: none;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: #fff;
+    }
+    .row-menu button {
       display: block;
+      width: 100%;
+      text-align: left;
+      background-color: #fff;
+      color: #222;
+      border: none;
+      border-radius: 0;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .row-menu button:hover {
+      background-color: #eef2ff;
+    }
+    .row-menu .menu-sep {
+      border-top: 1px solid #e0e0e0;
+    }
+    .row-menu .danger {
+      color: #d70022;
+    }
+    .row-menu .danger:hover {
+      background-color: #fbe9ea;
     }
   </style>
 </head>
