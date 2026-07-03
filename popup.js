@@ -187,12 +187,12 @@ document.addEventListener('DOMContentLoaded', function() {
           updateSelect.className = 'update-select';
           updateSelect.title = 'Update this session with the current window';
           updateSelect.innerHTML =
-            '<option value="">Update ▾</option>' +
+            '<option value="" selected disabled hidden>Update</option>' +
             '<option value="overwrite">Overwrite</option>' +
             '<option value="add">Add tabs</option>';
           updateSelect.addEventListener('change', function() {
             const action = updateSelect.value;
-            updateSelect.selectedIndex = 0; // reset back to the "Update ▾" label
+            updateSelect.selectedIndex = 0; // reset back to the "Update" label
             if (action === 'overwrite') {
               overwriteSession(index);
             } else if (action === 'add') {
