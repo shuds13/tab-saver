@@ -113,6 +113,34 @@
       color: #444;
       min-height: 14px;
     }
+    /* Saved-session rows — the whole block between dividers highlights on hover */
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 6px;
+      border-bottom: 1px solid #ddd;
+    }
+    .session-item:hover {
+      background-color: #e9eefb;
+    }
+    .session-name {
+      cursor: pointer;
+      color: #0060df;
+      flex-grow: 1;
+    }
+    .session-name:hover {
+      text-decoration: underline;
+    }
+    .btn-delete {
+      background-color: #d70022;
+      font-size: 12px;
+      padding: 3px 8px;
+      margin-left: 10px;
+    }
+    .btn-delete:hover {
+      background-color: #a4000f;
+    }
   </style>
 </head>
 <body>

@@ -171,35 +171,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add each session to the list
         savedSessions.forEach((session, index) => {
           const listItem = document.createElement('li');
-          listItem.style.margin = '8px 0';
-          listItem.style.padding = '5px';
-          listItem.style.borderBottom = '1px solid #ddd';
+          listItem.className = 'session-item';
 
-          // Session name and info
+          // Session name — click to open in a new window
           const sessionInfo = document.createElement('div');
+          sessionInfo.className = 'session-name';
           sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
-
-          sessionInfo.style.cursor = 'pointer';
-          sessionInfo.style.color = '#0060df';
-
-          // Add click event to open in new window
+          sessionInfo.title = 'Open in a new window';
           sessionInfo.addEventListener('click', function() {
             openSessionInNewWindow(session, index);
           });
 
           // Delete button
           const deleteButton = document.createElement('button');
+          deleteButton.className = 'btn-delete';
           deleteButton.textContent = 'Delete';
-          deleteButton.style.marginLeft = '10px';
-          deleteButton.style.padding = '2px 8px';
-          deleteButton.style.backgroundColor = '#d70022';  // Red color
-          deleteButton.onmouseover = () => deleteButton.style.backgroundColor = '#a4000f';
-          deleteButton.onmouseout = () => deleteButton.style.backgroundColor = '#d70022';
           deleteButton.addEventListener('click', function() {
             deleteSession(index);
           });
 
-          // Add elements to list item
           listItem.appendChild(sessionInfo);
           listItem.appendChild(deleteButton);
           sessionList.appendChild(listItem);
@@ -262,6 +252,85 @@ document.addEventListener('DOMContentLoaded', function() {
               errorNotice.style.padding = '5px';
               sessionsListDiv.parentNode.insertBefore(errorNotice, sessionsListDiv);
               setTimeout(() => errorNotice.remove(), 3000);
+          });
+  }
+
+  // Show a brief, non-blocking notice above the sessions list.
+  function showNotice(message, isError) {
+      const notice = document.createElement('div');
+      notice.textContent = message;
+      notice.style.color = isError ? '#a4000f' : '#12622b';
+      notice.style.padding = '5px';
+      sessionsListDiv.parentNode.insertBefore(notice, sessionsListDiv);
+      setTimeout(() => notice.remove(), 3000);
+  }
+
+  // Get the tabs that Update should use, mirroring Save: the highlighted tabs
+  // if more than one is selected, otherwise every tab in the current window.
+  function queryTabsToSave() {
+      return browser.tabs.query({ currentWindow: true, highlighted: true })
+          .then(function(highlightedTabs) {
+              if (highlightedTabs.length > 1) return highlightedTabs;
+              return browser.tabs.query({ currentWindow: true });
+          });
+  }
+
+  // Overwrite: replace a session's tabs with the current window's tabs.
+  function overwriteSession(index) {
+      queryTabsToSave()
+          .then(function(tabs) {
+              const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
+              return browser.storage.local.get('savedSessions').then(function(result) {
+                  const savedSessions = result.savedSessions || [];
+                  if (index < 0 || index >= savedSessions.length) return;
+                  const name = savedSessions[index].name;
+                  savedSessions[index].tabs = tabsData;
+                  savedSessions[index].date = new Date().toISOString();
+                  return browser.storage.local.set({ savedSessions }).then(function() {
+                      loadAndDisplaySessions();
+                      showNotice(`Updated "${name}" — now ${tabsData.length} tab${tabsData.length === 1 ? '' : 's'}`);
+                  });
+              });
+          })
+          .catch(function(error) {
+              console.error('Error overwriting session:', error);
+              showNotice('Error updating session', true);
+          });
+  }
+
+  // Add tabs: merge the current window's tabs into a session, skipping URLs it
+  // already has.
+  function addTabsToSession(index) {
+      queryTabsToSave()
+          .then(function(tabs) {
+              const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
+              return browser.storage.local.get('savedSessions').then(function(result) {
+                  const savedSessions = result.savedSessions || [];
+                  if (index < 0 || index >= savedSessions.length) return;
+                  const session = savedSessions[index];
+                  const existingUrls = new Set((session.tabs || []).map(tab => tab.url));
+                  let added = 0;
+                  let skipped = 0;
+                  tabsData.forEach(function(tab) {
+                      if (existingUrls.has(tab.url)) {
+                          skipped++;
+                          return;
+                      }
+                      existingUrls.add(tab.url);
+                      session.tabs.push(tab);
+                      added++;
+                  });
+                  session.date = new Date().toISOString();
+                  return browser.storage.local.set({ savedSessions }).then(function() {
+                      loadAndDisplaySessions();
+                      showNotice(`Added ${added} tab${added === 1 ? '' : 's'} to "${session.name}"` +
+                          (skipped ? `, skipped ${skipped} already saved` : ''));
+                  });
+              });
+          })
+          .catch(function(error) {
+              console.error('Error adding tabs to session:', error);
+              showNotice('Error adding tabs', true);
           });
   }
 
