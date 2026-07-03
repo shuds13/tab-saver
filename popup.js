@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           // Add click event to open in new window
           sessionInfo.addEventListener('click', function() {
-            openSessionInNewWindow(session);
+            openSessionInNewWindow(session, index);
           });
 
           // Delete button
@@ -214,8 +214,23 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  // Move the session at the given index to the top of the saved list, so the
+  // most recently opened sessions surface first next time the popup is opened.
+  function moveSessionToTop(index) {
+      return browser.storage.local.get('savedSessions')
+          .then(result => {
+              const savedSessions = result.savedSessions || [];
+              if (index < 0 || index >= savedSessions.length) return;
+              const [session] = savedSessions.splice(index, 1);
+              savedSessions.unshift(session);
+              return browser.storage.local.set({ savedSessions });
+          })
+          .then(() => loadAndDisplaySessions())
+          .catch(error => console.error('Error reordering sessions:', error));
+  }
+
   // Function to open a session in a new window
-  function openSessionInNewWindow(session) {
+  function openSessionInNewWindow(session, index) {
       if (!session.tabs || session.tabs.length === 0) {
           // Use non-blocking notification instead of alert
           const errorNotice = document.createElement('div');
@@ -226,6 +241,9 @@ document.addEventListener('DOMContentLoaded', function() {
           setTimeout(() => errorNotice.remove(), 3000);
           return;
       }
+
+      // Bring this session to the top of the list now that it's being opened
+      moveSessionToTop(index);
 
       // Create a new window with ALL saved tabs at once
       // Filter out about: URLs as they may cause issues
