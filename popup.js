@@ -17,9 +17,20 @@ document.addEventListener('DOMContentLoaded', function() {
   // Insert it right after the div containing the input and save button
   saveButton.parentNode.after(saveStatusDiv);
 
+  // Gear icon: open the Backup & Restore page in a tab.
+  // A file picker can't be used directly from a browser-action popup — opening
+  // one closes the popup and its scripts stop running — so import/export live
+  // on a dedicated page (options.html) instead.
+  const settingsBtn = document.getElementById('settingsBtn');
+
   // Initialize by loading saved sessions
   loadAndDisplaySessions();
   updateSaveStatus();
+
+  settingsBtn.addEventListener('click', function() {
+    browser.runtime.openOptionsPage();
+    window.close(); // close the popup so the page has focus
+  });
 
   // Add event listener to the save button
   saveButton.addEventListener('click', function() {
