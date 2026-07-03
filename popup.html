@@ -133,13 +133,23 @@
       text-decoration: underline;
     }
     .btn-delete {
-      background-color: #d70022;
-      font-size: 12px;
-      padding: 3px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: #d70022;
       margin-left: 10px;
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
     }
     .btn-delete:hover {
-      background-color: #a4000f;
+      background-color: #fbd6d9;
+      color: #a4000f;
+    }
+    .btn-delete svg {
+      display: block;
     }
   </style>
 </head>

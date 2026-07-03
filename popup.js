@@ -182,10 +182,14 @@ document.addEventListener('DOMContentLoaded', function() {
             openSessionInNewWindow(session, index);
           });
 
-          // Delete button
+          // Delete button (red trash-bin icon)
           const deleteButton = document.createElement('button');
           deleteButton.className = 'btn-delete';
-          deleteButton.textContent = 'Delete';
+          deleteButton.title = 'Delete session';
+          deleteButton.setAttribute('aria-label', 'Delete session');
+          deleteButton.innerHTML =
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">' +
+            '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
           deleteButton.addEventListener('click', function() {
             deleteSession(index);
           });
