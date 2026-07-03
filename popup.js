@@ -211,19 +211,28 @@ document.addEventListener('DOMContentLoaded', function() {
           const menu = document.createElement('div');
           menu.className = 'row-menu';
 
-          function addMenuItem(label, onClick, extraClass) {
+          function addMenuItem(label, title, onClick, extraClass) {
             const item = document.createElement('button');
             item.textContent = label;
+            if (title) item.title = title;
             if (extraClass) item.className = extraClass;
             item.addEventListener('click', onClick);
             menu.appendChild(item);
           }
 
-          addMenuItem('Add tabs', function() { addTabsToSession(index); });
-          addMenuItem('Add current tab', function() { addCurrentTabToSession(index); });
+          addMenuItem('Add all tabs',
+            "Add this window's open tabs to this session (or just the tabs you've selected), skipping any already saved",
+            function() { addTabsToSession(index); });
+          addMenuItem('Add current tab',
+            'Add only the active tab to this session',
+            function() { addCurrentTabToSession(index); });
           // Destructive actions, separated and shown in red
-          addMenuItem('Overwrite', function() { overwriteSession(index); }, 'danger menu-sep');
-          addMenuItem('Delete', function() { deleteSession(index); }, 'danger');
+          addMenuItem('Overwrite',
+            "Replace this session's tabs with this window's tabs",
+            function() { overwriteSession(index); }, 'danger menu-sep');
+          addMenuItem('Delete',
+            'Delete this session',
+            function() { deleteSession(index); }, 'danger');
 
           optionsButton.addEventListener('click', function() {
             const isOpen = menu.style.display === 'block';
