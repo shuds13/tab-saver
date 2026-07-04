@@ -63,7 +63,13 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Zap: close duplicate tabs in the current window
-  zapBtn.addEventListener('click', zapDuplicateTabs);
+  zapBtn.addEventListener('click', function() {
+    zapBtn.classList.add('zap-flash');
+    zapBtn.addEventListener('animationend', function() {
+      zapBtn.classList.remove('zap-flash');
+    }, { once: true });
+    zapDuplicateTabs();
+  });
 
   // Close any open row menu when clicking outside a trigger or menu
   document.addEventListener('click', function(event) {

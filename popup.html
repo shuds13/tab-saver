@@ -144,6 +144,15 @@
       background-color: #eee;
       color: #0060df;
     }
+    /* Brief brighten/pulse when the Zap button is pressed */
+    @keyframes zapFlash {
+      0%   { transform: scale(1);    filter: brightness(1); }
+      30%  { transform: scale(1.25); filter: brightness(1.7); }
+      100% { transform: scale(1);    filter: brightness(1); }
+    }
+    .zap-flash {
+      animation: zapFlash 0.35s ease-out;
+    }
     #settingsPanel {
       display: none;
       margin: 8px 0;
