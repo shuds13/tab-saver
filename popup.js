@@ -17,6 +17,35 @@ document.addEventListener('DOMContentLoaded', function() {
   // Insert it right after the div containing the input and save button
   saveButton.parentNode.after(saveStatusDiv);
 
+  // Status text plus a small switch that toggles what Save captures: all tabs
+  // (default) or just the current tab. The switch only changes the mode; the
+  // Save button still does the saving.
+  const saveStatusText = document.createElement('span');
+  saveStatusDiv.appendChild(saveStatusText);
+
+  let saveMode = 'all'; // 'all' or 'current'
+  const saveToggle = document.createElement('label');
+  saveToggle.className = 'save-toggle';
+  saveToggle.title = 'Toggle: save all tabs, or just the current tab';
+  const saveToggleInput = document.createElement('input');
+  saveToggleInput.type = 'checkbox';
+  const saveToggleSlider = document.createElement('span');
+  saveToggleSlider.className = 'slider';
+  saveToggle.appendChild(saveToggleInput);
+  saveToggle.appendChild(saveToggleSlider);
+  saveStatusDiv.appendChild(saveToggle);
+  saveToggleInput.addEventListener('change', function() {
+    saveMode = saveToggleInput.checked ? 'current' : 'all';
+    updateSaveStatus();
+  });
+
+  // Save according to the current mode (used by the button and Enter key)
+  function doSave() {
+    if (sessionNameInput.value.trim() === '') return;
+    if (saveMode === 'current') saveCurrentTabOnly();
+    else saveCurrentSession();
+  }
+
   // Gear icon: open the Backup & Restore page in a tab.
   // A file picker can't be used directly from a browser-action popup — opening
   // one closes the popup and its scripts stop running — so import/export live
@@ -51,36 +80,32 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Add event listener to the save button
-  saveButton.addEventListener('click', function() {
-    // Only proceed if there's text in the input field
-    if (sessionNameInput.value.trim() !== '') {
-      saveCurrentSession();
-    }
-  });
+  saveButton.addEventListener('click', doSave);
 
   // Handle Enter key in the input field
   sessionNameInput.addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
       event.preventDefault(); // Prevent form submission
-      // Only proceed if there's text in the input field
-      if (sessionNameInput.value.trim() !== '') {
-        saveCurrentSession();
-      }
+      doSave();
     }
   });
 
   // Simple function to update status text
   function updateSaveStatus() {
+    if (saveMode === 'current') {
+      saveStatusText.textContent = 'Will save current tab ';
+      return;
+    }
     // First check for highlighted tabs (selected tabs)
     browser.tabs.query({currentWindow: true, highlighted: true})
       .then(function(highlightedTabs) {
         if (highlightedTabs.length > 1) {
-          saveStatusDiv.textContent = `Will save ${highlightedTabs.length} selected tabs`;
+          saveStatusText.textContent = `Will save ${highlightedTabs.length} selected tabs `;
         } else {
           // If no selection, will save all tabs
           browser.tabs.query({currentWindow: true})
             .then(function(allTabs) {
-              saveStatusDiv.textContent = `Will save all ${allTabs.length} tabs`;
+              saveStatusText.textContent = `Will save all ${allTabs.length} tabs `;
             });
         }
       });
@@ -161,6 +186,37 @@ document.addEventListener('DOMContentLoaded', function() {
         errorNotice.style.padding = '5px';
         saveStatusDiv.parentNode.insertBefore(errorNotice, saveStatusDiv.nextSibling);
         setTimeout(() => errorNotice.remove(), 3000);
+      });
+  }
+
+  // Save a new session containing only the current (active) tab.
+  function saveCurrentTabOnly() {
+    const sessionName = sessionNameInput.value.trim();
+    if (!sessionName) return;
+
+    browser.tabs.query({ currentWindow: true, active: true })
+      .then(function(tabs) {
+        const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
+        const sessionData = {
+          name: sessionName,
+          date: new Date().toISOString(),
+          tabs: tabsData,
+          selectedOnly: false
+        };
+        return browser.storage.local.get('savedSessions').then(function(result) {
+          const savedSessions = result.savedSessions || [];
+          savedSessions.unshift(sessionData);
+          return browser.storage.local.set({ savedSessions: savedSessions });
+        });
+      })
+      .then(function() {
+        sessionNameInput.value = '';
+        updateSaveStatus();
+        loadAndDisplaySessions();
+      })
+      .catch(function(error) {
+        console.error('Error saving current tab:', error);
+        showNotice('Error saving session', true);
       });
   }
 

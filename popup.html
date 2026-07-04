@@ -29,6 +29,46 @@
       border-color: #0060df;
       box-shadow: 0 0 0 2px rgba(0, 96, 223, 0.2);
     }
+    .save-toggle {
+      position: relative;
+      display: inline-block;
+      width: 26px;
+      height: 14px;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .save-toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      margin: 0;
+    }
+    .save-toggle .slider {
+      position: absolute;
+      inset: 0;
+      background-color: #ccc;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    .save-toggle .slider::before {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      left: 2px;
+      top: 2px;
+      background-color: #fff;
+      border-radius: 50%;
+      transition: transform 0.15s;
+    }
+    .save-toggle input:checked + .slider {
+      background-color: #0060df;
+    }
+    .save-toggle input:checked + .slider::before {
+      transform: translateX(12px);
+    }
     button {
       padding: 5px 10px;
       background-color: #0060df;
