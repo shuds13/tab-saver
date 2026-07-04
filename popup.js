@@ -305,12 +305,12 @@ document.addEventListener('DOMContentLoaded', function() {
             explorePanel.appendChild(tabItem);
           });
 
-          const exploreItem = addMenuItem('Explore  ▸',
+          const exploreItem = addMenuItem('Show tabs  ▸',
             "List this session's tabs to open individually",
             function() {
               const isOpen = explorePanel.style.display === 'block';
               explorePanel.style.display = isOpen ? 'none' : 'block';
-              exploreItem.textContent = isOpen ? 'Explore  ▸' : 'Explore  ▾';
+              exploreItem.textContent = isOpen ? 'Show tabs  ▸' : 'Show tabs  ▾';
             });
           menu.appendChild(explorePanel);
 
