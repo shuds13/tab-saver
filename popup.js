@@ -222,27 +222,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (extraClass) item.className = extraClass;
             item.addEventListener('click', onClick);
             menu.appendChild(item);
+            return item;
           }
 
-          // Explore panel: a collapsible list of this session's tabs shown
-          // under the row. Its own ✕ closes it; Explore in the menu toggles it.
+          // Explore panel: a collapsible list of this session's tabs, shown in
+          // the menu right under Explore. The Explore item toggles it; the menu
+          // stays open.
           const explorePanel = document.createElement('div');
           explorePanel.className = 'explore-panel';
-
-          const exploreHead = document.createElement('div');
-          exploreHead.className = 'explore-head';
-          const exploreLabel = document.createElement('span');
-          exploreLabel.textContent = 'Tabs — click to open';
-          const exploreCloseBtn = document.createElement('button');
-          exploreCloseBtn.className = 'explore-close';
-          exploreCloseBtn.textContent = '✕';
-          exploreCloseBtn.title = 'Close';
-          exploreCloseBtn.addEventListener('click', function() {
-            explorePanel.style.display = 'none';
-          });
-          exploreHead.appendChild(exploreLabel);
-          exploreHead.appendChild(exploreCloseBtn);
-          explorePanel.appendChild(exploreHead);
 
           session.tabs.forEach(function(t) {
             const tabItem = document.createElement('div');
@@ -256,12 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
             explorePanel.appendChild(tabItem);
           });
 
-          addMenuItem('Explore',
+          const exploreItem = addMenuItem('Explore  ▸',
             "List this session's tabs to open individually",
             function() {
-              closeAllRowMenus();
-              explorePanel.style.display = explorePanel.style.display === 'block' ? 'none' : 'block';
+              const isOpen = explorePanel.style.display === 'block';
+              explorePanel.style.display = isOpen ? 'none' : 'block';
+              exploreItem.textContent = isOpen ? 'Explore  ▸' : 'Explore  ▾';
             });
+          menu.appendChild(explorePanel);
           addMenuItem('Add current tab',
             'Add only the active tab to this session',
             function() { addCurrentTabToSession(index); }, 'menu-sep');
@@ -286,7 +275,6 @@ document.addEventListener('DOMContentLoaded', function() {
           row.appendChild(optionsButton);
           listItem.appendChild(row);
           listItem.appendChild(menu);
-          listItem.appendChild(explorePanel);
           sessionList.appendChild(listItem);
         });
 
