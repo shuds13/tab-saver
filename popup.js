@@ -268,6 +268,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 tabItem.className = 'explore-tab';
                 if (prevUrls && !prevUrls.has(t.url)) {
                   tabItem.classList.add('explore-tab-new');
+                  // Drop the class once the flash finishes so it doesn't replay
+                  // every time the Explore list is reopened.
+                  tabItem.addEventListener('animationend', function() {
+                    tabItem.classList.remove('explore-tab-new');
+                  }, { once: true });
                 }
                 tabItem.textContent = t.title || t.url;
                 tabItem.title = t.url;
