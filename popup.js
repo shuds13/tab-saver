@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // one closes the popup and its scripts stop running — so import/export live
   // on a dedicated page (options.html) instead.
   const settingsBtn = document.getElementById('settingsBtn');
+  const zapBtn = document.getElementById('zapBtn');
 
   // Initialize by loading saved sessions
   loadAndDisplaySessions();
@@ -31,6 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
     browser.runtime.openOptionsPage();
     window.close(); // close the popup so the page has focus
   });
+
+  // Zap: close duplicate tabs in the current window
+  zapBtn.addEventListener('click', zapDuplicateTabs);
 
   // Close any open row menu when clicking outside a trigger or menu
   document.addEventListener('click', function(event) {
@@ -315,6 +319,54 @@ document.addEventListener('DOMContentLoaded', function() {
       notice.style.padding = '5px';
       sessionsListDiv.parentNode.insertBefore(notice, sessionsListDiv);
       setTimeout(() => notice.remove(), 3000);
+  }
+
+  // Normalise a URL so near-duplicates match: drop the #fragment, common
+  // tracking params, and a trailing slash.
+  function normalizeUrl(url) {
+      try {
+          const u = new URL(url);
+          u.hash = '';
+          ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+           'fbclid', 'gclid', 'ref', 'ref_src'].forEach(p => u.searchParams.delete(p));
+          return u.toString().replace(/\/$/, '');
+      } catch (e) {
+          return url; // non-standard URLs (about:, etc.) compared as-is
+      }
+  }
+
+  // Zap: close exact + near-duplicate tabs in the current window, keeping the
+  // first occurrence of each. Pinned tabs are always kept.
+  function zapDuplicateTabs() {
+      browser.tabs.query({ currentWindow: true })
+          .then(function(tabs) {
+              const seen = new Set();
+              const toClose = [];
+              tabs.forEach(function(tab) {
+                  const key = normalizeUrl(tab.url);
+                  if (tab.pinned) {
+                      seen.add(key); // keep pinned tabs, but let them absorb dupes
+                      return;
+                  }
+                  if (seen.has(key)) {
+                      toClose.push(tab.id);
+                  } else {
+                      seen.add(key);
+                  }
+              });
+
+              if (toClose.length === 0) {
+                  showNotice('No duplicate tabs to zap');
+                  return;
+              }
+              return browser.tabs.remove(toClose).then(function() {
+                  showNotice(`Zapped ${toClose.length} duplicate tab${toClose.length === 1 ? '' : 's'}`);
+              });
+          })
+          .catch(function(error) {
+              console.error('Error zapping tabs:', error);
+              showNotice('Error zapping tabs', true);
+          });
   }
 
   // Get the tabs that Update should use, mirroring Save: the highlighted tabs

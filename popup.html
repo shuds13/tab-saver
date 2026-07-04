@@ -73,6 +73,11 @@
     .header h1 {
       margin: 0;
     }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
     .icon-btn {
       display: flex;
       align-items: center;
@@ -193,7 +198,10 @@
 <body>
   <div class="header">
     <h1>Tab Session Saver</h1>
-    <button id="settingsBtn" class="icon-btn" title="Backup &amp; restore" aria-label="Backup &amp; restore">&#9881;</button>
+    <div class="header-actions">
+      <button id="zapBtn" class="icon-btn" title="Zap duplicate tabs in this window" aria-label="Zap duplicate tabs">&#9889;</button>
+      <button id="settingsBtn" class="icon-btn" title="Backup &amp; restore" aria-label="Backup &amp; restore">&#9881;</button>
+    </div>
   </div>
   <div>
     <input type="text" id="sessionName" placeholder="Enter session name" />
