@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // Session name — click to open in a new window
           const sessionInfo = document.createElement('div');
           sessionInfo.className = 'session-name';
-          sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
+          setSessionLabel(sessionInfo, session.name, session.tabs.length);
           sessionInfo.title = 'Open in a new window';
           sessionInfo.addEventListener('click', function() {
             openSessionInNewWindow(index);
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const list = result.savedSessions || [];
               const s = list[index];
               if (!s) return;
-              sessionInfo.textContent = `${s.name} (${s.tabs.length} tabs)`;
+              setSessionLabel(sessionInfo, s.name, s.tabs.length);
               explorePanel.innerHTML = '';
               s.tabs.forEach(function(t) {
                 const tabItem = document.createElement('div');
@@ -365,6 +365,18 @@ document.addEventListener('DOMContentLoaded', function() {
               console.error('Error opening session:', error);
               showNotice('Error opening session', true);
           });
+  }
+
+  // Set a session row's label: name in the link colour, count muted grey.
+  function setSessionLabel(el, name, count) {
+      el.textContent = '';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = name;
+      const countSpan = document.createElement('span');
+      countSpan.className = 'session-count';
+      countSpan.textContent = ` (${count} tabs)`;
+      el.appendChild(nameSpan);
+      el.appendChild(countSpan);
   }
 
   // Show a brief, non-blocking notice above the sessions list.
