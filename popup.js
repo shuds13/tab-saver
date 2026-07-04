@@ -222,14 +222,41 @@ document.addEventListener('DOMContentLoaded', function() {
             if (extraClass) item.className = extraClass;
             item.addEventListener('click', onClick);
             menu.appendChild(item);
+            return item;
           }
 
+          // Explore panel: a collapsible list of this session's tabs, shown in
+          // the menu right under Explore. The Explore item toggles it; the menu
+          // stays open.
+          const explorePanel = document.createElement('div');
+          explorePanel.className = 'explore-panel';
+
+          session.tabs.forEach(function(t) {
+            const tabItem = document.createElement('div');
+            tabItem.className = 'explore-tab';
+            tabItem.textContent = t.title || t.url;
+            tabItem.title = t.url;
+            tabItem.addEventListener('click', function() {
+              browser.tabs.create({ url: t.url, active: false })
+                .catch(error => console.error('Error opening tab:', error));
+            });
+            explorePanel.appendChild(tabItem);
+          });
+
+          const exploreItem = addMenuItem('Explore  ▸',
+            "List this session's tabs to open individually",
+            function() {
+              const isOpen = explorePanel.style.display === 'block';
+              explorePanel.style.display = isOpen ? 'none' : 'block';
+              exploreItem.textContent = isOpen ? 'Explore  ▸' : 'Explore  ▾';
+            });
+          menu.appendChild(explorePanel);
+          addMenuItem('Add current tab',
+            'Add only the active tab to this session',
+            function() { addCurrentTabToSession(index); }, 'menu-sep');
           addMenuItem('Add all tabs',
             "Add this window's open tabs to this session (or just the tabs you've selected), skipping any already saved",
             function() { addTabsToSession(index); });
-          addMenuItem('Add current tab',
-            'Add only the active tab to this session',
-            function() { addCurrentTabToSession(index); });
           // Destructive actions, separated and shown in red
           addMenuItem('Overwrite',
             "Replace this session's tabs with this window's tabs",
