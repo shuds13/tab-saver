@@ -489,6 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   return;
               }
               return browser.tabs.remove(toClose).then(function() {
+                  updateSaveStatus(); // tab count changed, refresh the "Will save…" line
                   showNotice(`Zapped ${toClose.length} duplicate tab${toClose.length === 1 ? '' : 's'}`);
               });
           })
