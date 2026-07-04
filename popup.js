@@ -224,6 +224,44 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.appendChild(item);
           }
 
+          // Explore panel: a collapsible list of this session's tabs shown
+          // under the row. Its own ✕ closes it; Explore in the menu toggles it.
+          const explorePanel = document.createElement('div');
+          explorePanel.className = 'explore-panel';
+
+          const exploreHead = document.createElement('div');
+          exploreHead.className = 'explore-head';
+          const exploreLabel = document.createElement('span');
+          exploreLabel.textContent = 'Tabs — click to open';
+          const exploreCloseBtn = document.createElement('button');
+          exploreCloseBtn.className = 'explore-close';
+          exploreCloseBtn.textContent = '✕';
+          exploreCloseBtn.title = 'Close';
+          exploreCloseBtn.addEventListener('click', function() {
+            explorePanel.style.display = 'none';
+          });
+          exploreHead.appendChild(exploreLabel);
+          exploreHead.appendChild(exploreCloseBtn);
+          explorePanel.appendChild(exploreHead);
+
+          session.tabs.forEach(function(t) {
+            const tabItem = document.createElement('div');
+            tabItem.className = 'explore-tab';
+            tabItem.textContent = t.title || t.url;
+            tabItem.title = t.url;
+            tabItem.addEventListener('click', function() {
+              browser.tabs.create({ url: t.url, active: false })
+                .catch(error => console.error('Error opening tab:', error));
+            });
+            explorePanel.appendChild(tabItem);
+          });
+
+          addMenuItem('Explore',
+            "List this session's tabs to open individually",
+            function() {
+              closeAllRowMenus();
+              explorePanel.style.display = explorePanel.style.display === 'block' ? 'none' : 'block';
+            });
           addMenuItem('Add all tabs',
             "Add this window's open tabs to this session (or just the tabs you've selected), skipping any already saved",
             function() { addTabsToSession(index); });
@@ -248,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
           row.appendChild(optionsButton);
           listItem.appendChild(row);
           listItem.appendChild(menu);
+          listItem.appendChild(explorePanel);
           sessionList.appendChild(listItem);
         });
 
