@@ -254,7 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
           // Refresh this row in place (name/count + explore list) without
           // rebuilding the whole list, so the menu stays open after add/overwrite.
-          function refreshRow() {
+          // If prevUrls is given, any tab whose URL isn't in it is briefly
+          // flashed so you can see what was just added.
+          function refreshRow(prevUrls) {
             return browser.storage.local.get('savedSessions').then(function(result) {
               const list = result.savedSessions || [];
               const s = list[index];
@@ -264,6 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
               s.tabs.forEach(function(t) {
                 const tabItem = document.createElement('div');
                 tabItem.className = 'explore-tab';
+                if (prevUrls && !prevUrls.has(t.url)) {
+                  tabItem.classList.add('explore-tab-new');
+                }
                 tabItem.textContent = t.title || t.url;
                 tabItem.title = t.url;
                 tabItem.addEventListener('click', function() {
@@ -275,12 +280,23 @@ document.addEventListener('DOMContentLoaded', function() {
             });
           }
 
+          // URLs currently shown, captured before an add so we can flash new ones
+          function currentExploreUrls() {
+            return new Set(Array.from(explorePanel.children).map(el => el.title));
+          }
+
           addMenuItem('Add current tab',
             'Add only the active tab to this session',
-            function() { addCurrentTabToSession(index).then(refreshRow); }, 'menu-sep');
+            function() {
+              const before = currentExploreUrls();
+              addCurrentTabToSession(index).then(function() { return refreshRow(before); });
+            }, 'menu-sep');
           addMenuItem('Add all tabs',
             "Add this window's open tabs to this session (or just the tabs you've selected), skipping any already saved",
-            function() { addTabsToSession(index).then(refreshRow); });
+            function() {
+              const before = currentExploreUrls();
+              addTabsToSession(index).then(function() { return refreshRow(before); });
+            });
           // Destructive actions, separated and shown in red
           addMenuItem('Overwrite',
             "Replace this session's tabs with this window's tabs",

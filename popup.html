@@ -211,6 +211,14 @@
       background-color: #d8e2fb;
       text-decoration: underline;
     }
+    /* Briefly flash a just-added tab in the explore list */
+    @keyframes exploreTabNew {
+      from { background-color: #bfe3c6; }
+      to { background-color: transparent; }
+    }
+    .explore-tab-new {
+      animation: exploreTabNew 1.6s ease-out;
+    }
   </style>
 </head>
 <body>
