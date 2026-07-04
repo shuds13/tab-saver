@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
           sessionInfo.textContent = `${session.name} (${session.tabs.length} tabs)`;
           sessionInfo.title = 'Open in a new window';
           sessionInfo.addEventListener('click', function() {
-            openSessionInNewWindow(session, index);
+            openSessionInNewWindow(index);
           });
 
           // Options button (⋮) toggles this row's action menu
@@ -251,16 +251,40 @@ document.addEventListener('DOMContentLoaded', function() {
               exploreItem.textContent = isOpen ? 'Explore  ▸' : 'Explore  ▾';
             });
           menu.appendChild(explorePanel);
+
+          // Refresh this row in place (name/count + explore list) without
+          // rebuilding the whole list, so the menu stays open after add/overwrite.
+          function refreshRow() {
+            return browser.storage.local.get('savedSessions').then(function(result) {
+              const list = result.savedSessions || [];
+              const s = list[index];
+              if (!s) return;
+              sessionInfo.textContent = `${s.name} (${s.tabs.length} tabs)`;
+              explorePanel.innerHTML = '';
+              s.tabs.forEach(function(t) {
+                const tabItem = document.createElement('div');
+                tabItem.className = 'explore-tab';
+                tabItem.textContent = t.title || t.url;
+                tabItem.title = t.url;
+                tabItem.addEventListener('click', function() {
+                  browser.tabs.create({ url: t.url, active: false })
+                    .catch(error => console.error('Error opening tab:', error));
+                });
+                explorePanel.appendChild(tabItem);
+              });
+            });
+          }
+
           addMenuItem('Add current tab',
             'Add only the active tab to this session',
-            function() { addCurrentTabToSession(index); }, 'menu-sep');
+            function() { addCurrentTabToSession(index).then(refreshRow); }, 'menu-sep');
           addMenuItem('Add all tabs',
             "Add this window's open tabs to this session (or just the tabs you've selected), skipping any already saved",
-            function() { addTabsToSession(index); });
+            function() { addTabsToSession(index).then(refreshRow); });
           // Destructive actions, separated and shown in red
           addMenuItem('Overwrite',
             "Replace this session's tabs with this window's tabs",
-            function() { overwriteSession(index); }, 'danger menu-sep');
+            function() { overwriteSession(index).then(refreshRow); }, 'danger menu-sep');
           addMenuItem('Delete',
             'Delete this session',
             function() { deleteSession(index); }, 'danger');
@@ -302,39 +326,28 @@ document.addEventListener('DOMContentLoaded', function() {
           .catch(error => console.error('Error reordering sessions:', error));
   }
 
-  // Function to open a session in a new window
-  function openSessionInNewWindow(session, index) {
-      if (!session.tabs || session.tabs.length === 0) {
-          // Use non-blocking notification instead of alert
-          const errorNotice = document.createElement('div');
-          errorNotice.textContent = 'This session has no tabs to open';
-          errorNotice.style.color = 'red';
-          errorNotice.style.padding = '5px';
-          sessionsListDiv.parentNode.insertBefore(errorNotice, sessionsListDiv);
-          setTimeout(() => errorNotice.remove(), 3000);
-          return;
-      }
-
-      // Bring this session to the top of the list now that it's being opened
-      moveSessionToTop(index);
-
-      // Create a new window with ALL saved tabs at once
-      // Filter out about: URLs as they may cause issues
-      const allUrls = session.tabs.map(tab => tab.url).filter(url => !url.startsWith('about:'));
-
-      browser.windows.create({ url: allUrls })
-          .then(function(newWindow) {
-              console.log('Created new window with ID:', newWindow.id);
+  // Function to open a session in a new window (reads fresh from storage by
+  // index so it reflects any in-place updates).
+  function openSessionInNewWindow(index) {
+      browser.storage.local.get('savedSessions')
+          .then(function(result) {
+              const session = (result.savedSessions || [])[index];
+              if (!session || !session.tabs || session.tabs.length === 0) {
+                  showNotice('This session has no tabs to open', true);
+                  return;
+              }
+              // Bring this session to the top now that it's being opened
+              moveSessionToTop(index);
+              // Create a new window with ALL saved tabs at once; filter out
+              // about: URLs as they may cause issues
+              const allUrls = session.tabs.map(tab => tab.url).filter(url => !url.startsWith('about:'));
+              return browser.windows.create({ url: allUrls }).then(function(newWindow) {
+                  console.log('Created new window with ID:', newWindow.id);
+              });
           })
           .catch(function(error) {
               console.error('Error opening session:', error);
-              // Use non-blocking notification instead of alert
-              const errorNotice = document.createElement('div');
-              errorNotice.textContent = 'Error opening session';
-              errorNotice.style.color = 'red';
-              errorNotice.style.padding = '5px';
-              sessionsListDiv.parentNode.insertBefore(errorNotice, sessionsListDiv);
-              setTimeout(() => errorNotice.remove(), 3000);
+              showNotice('Error opening session', true);
           });
   }
 
@@ -408,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Overwrite: replace a session's tabs with the current window's tabs.
   function overwriteSession(index) {
-      queryTabsToSave()
+      return queryTabsToSave()
           .then(function(tabs) {
               const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
               return browser.storage.local.get('savedSessions').then(function(result) {
@@ -422,7 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   session.tabs = tabsData;
                   session.date = new Date().toISOString();
                   return browser.storage.local.set({ savedSessions }).then(function() {
-                      loadAndDisplaySessions();
                       showUndo(`Overwrote "${name}" — now ${tabsData.length} tab${tabsData.length === 1 ? '' : 's'}.`, function() {
                           return browser.storage.local.get('savedSessions').then(function(result2) {
                               const list = result2.savedSessions || [];
@@ -461,7 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
           });
           session.date = new Date().toISOString();
           return browser.storage.local.set({ savedSessions }).then(function() {
-              loadAndDisplaySessions();
               showNotice(`Added ${added} tab${added === 1 ? '' : 's'} to "${session.name}"` +
                   (skipped ? `, skipped ${skipped} already saved` : ''));
           });
@@ -470,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Add tabs: merge the current window's tabs into a session.
   function addTabsToSession(index) {
-      queryTabsToSave()
+      return queryTabsToSave()
           .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title }))))
           .catch(function(error) {
               console.error('Error adding tabs to session:', error);
@@ -480,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Add current tab: merge only the active tab of the current window.
   function addCurrentTabToSession(index) {
-      browser.tabs.query({ currentWindow: true, active: true })
+      return browser.tabs.query({ currentWindow: true, active: true })
           .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title }))))
           .catch(function(error) {
               console.error('Error adding current tab to session:', error);
