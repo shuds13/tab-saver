@@ -44,17 +44,44 @@
     #status.ok { background-color: #e6f4ea; color: #12622b; }
     #status.err { background-color: #fce8e6; color: #a4000f; }
     .count { color: #737373; }
+    .zap-opt {
+      display: block;
+      margin: 8px 0;
+      line-height: 1.4;
+    }
+    .zap-opt input {
+      margin-right: 6px;
+    }
+    hr {
+      margin: 28px 0;
+      border: none;
+      border-top: 1px solid #ddd;
+    }
   </style>
 </head>
 <body>
-  <h1>Tab Session Saver — Backup &amp; Restore</h1>
+  <h1>Tab Session Saver — Settings</h1>
+
+  <h2>Zap</h2>
+  <p>How aggressively the ⚡ button trims tabs in the current window. Closed tabs can be
+     restored with Ctrl+Shift+T.</p>
+  <label class="zap-opt"><input type="radio" name="zapLevel" value="duplicates">
+    <strong>Duplicates only</strong> — exact &amp; near-duplicate tabs</label>
+  <label class="zap-opt"><input type="radio" name="zapLevel" value="related">
+    <strong>Group related pages</strong> — also collapse sub-pages of the same GitHub/GitLab PR, MR, or issue</label>
+  <label class="zap-opt"><input type="radio" name="zapLevel" value="aggressive">
+    <strong>Aggressive</strong> — also collapse all tabs of the same GitHub repo / GitLab project</label>
+
+  <hr>
+
+  <h2>Backup &amp; Restore</h2>
   <p class="count" id="count"></p>
 
-  <h2>Export</h2>
+  <h3>Export</h3>
   <p>Download all your saved sessions as a JSON file. Keep it somewhere safe as a backup.</p>
   <button id="exportBtn">Export to file</button>
 
-  <h2>Import</h2>
+  <h3>Import</h3>
   <p>Load sessions from a JSON file. Imported sessions are <strong>added</strong> to what
      you already have — nothing is overwritten. Sessions that duplicate an existing one
      (same name and same tabs) are skipped.</p>
