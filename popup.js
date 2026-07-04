@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.close(); // close the popup so the page has focus
   });
 
-  // Zap: close duplicate tabs in the current window
-  zapBtn.addEventListener('click', zapDuplicateTabs);
+  // Zap: trim tabs in the current window (level set on the options page)
+  zapBtn.addEventListener('click', zapTabs);
 
   // Close any open row menu when clicking outside a trigger or menu
   document.addEventListener('click', function(event) {
@@ -335,32 +335,76 @@ document.addEventListener('DOMContentLoaded', function() {
       }
   }
 
-  // Zap: close exact + near-duplicate tabs in the current window, keeping the
-  // first occurrence of each. Pinned tabs are always kept.
-  function zapDuplicateTabs() {
-      browser.tabs.query({ currentWindow: true })
-          .then(function(tabs) {
-              const seen = new Set();
-              const toClose = [];
-              tabs.forEach(function(tab) {
-                  const key = normalizeUrl(tab.url);
-                  if (tab.pinned) {
-                      seen.add(key); // keep pinned tabs, but let them absorb dupes
+  // Grouping key for a tab, controlled by the zap level:
+  //  - 'duplicates': exact + near-duplicate URLs only
+  //  - 'related':    also group sub-pages of the same GitHub/GitLab PR/MR/issue
+  //  - 'aggressive': also group all tabs of the same GitHub repo / GitLab project
+  // Unrecognised sites always fall back to duplicate detection.
+  function zapKey(url, level) {
+      if (level === 'duplicates') return normalizeUrl(url);
+
+      let u;
+      try { u = new URL(url); } catch (e) { return normalizeUrl(url); }
+      const host = u.hostname.replace(/^www\./, '');
+      const parts = u.pathname.split('/').filter(Boolean);
+
+      if (host === 'github.com') {
+          const [owner, repo, type, number] = parts;
+          if (owner && repo) {
+              if (level === 'aggressive') return `gh:${owner}/${repo}`;
+              if (number && ['pull', 'issues', 'discussions'].includes(type)) {
+                  return `gh:${owner}/${repo}/${type}/${number}`;
+              }
+          }
+          return normalizeUrl(url);
+      }
+
+      if (host === 'gitlab.com') {
+          const idx = parts.indexOf('-'); // GitLab separates project path from features with /-/
+          if (idx > 0) {
+              const project = parts.slice(0, idx).join('/');
+              if (level === 'aggressive') return `gl:${project}`;
+              const type = parts[idx + 1];
+              const number = parts[idx + 2];
+              if (number && ['merge_requests', 'issues'].includes(type)) {
+                  return `gl:${project}/${type}/${number}`;
+              }
+          }
+          return normalizeUrl(url);
+      }
+
+      return normalizeUrl(url);
+  }
+
+  // Zap: trim tabs in the current window per the saved zap level, keeping the
+  // first occurrence of each group. Pinned tabs are always kept.
+  function zapTabs() {
+      browser.storage.local.get('zapLevel')
+          .then(function(res) {
+              const level = res.zapLevel || 'duplicates';
+              return browser.tabs.query({ currentWindow: true }).then(function(tabs) {
+                  const seen = new Set();
+                  const toClose = [];
+                  tabs.forEach(function(tab) {
+                      const key = zapKey(tab.url, level);
+                      if (tab.pinned) {
+                          seen.add(key); // keep pinned tabs, but let them absorb the group
+                          return;
+                      }
+                      if (seen.has(key)) {
+                          toClose.push(tab.id);
+                      } else {
+                          seen.add(key);
+                      }
+                  });
+
+                  if (toClose.length === 0) {
+                      showNotice('No tabs to zap');
                       return;
                   }
-                  if (seen.has(key)) {
-                      toClose.push(tab.id);
-                  } else {
-                      seen.add(key);
-                  }
-              });
-
-              if (toClose.length === 0) {
-                  showNotice('No duplicate tabs to zap');
-                  return;
-              }
-              return browser.tabs.remove(toClose).then(function() {
-                  showNotice(`Zapped ${toClose.length} duplicate tab${toClose.length === 1 ? '' : 's'}`);
+                  return browser.tabs.remove(toClose).then(function() {
+                      showNotice(`Zapped ${toClose.length} tab${toClose.length === 1 ? '' : 's'}`);
+                  });
               });
           })
           .catch(function(error) {

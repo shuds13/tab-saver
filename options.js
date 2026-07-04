@@ -8,8 +8,25 @@ document.addEventListener('DOMContentLoaded', function() {
   const importFile = document.getElementById('importFile');
   const statusDiv = document.getElementById('status');
   const countDiv = document.getElementById('count');
+  const zapRadios = document.querySelectorAll('input[name="zapLevel"]');
 
   updateCount();
+  initZapLevel();
+
+  // Load the saved zap level and persist changes
+  function initZapLevel() {
+    browser.storage.local.get('zapLevel').then(function(res) {
+      const level = res.zapLevel || 'duplicates';
+      zapRadios.forEach(function(radio) {
+        radio.checked = (radio.value === level);
+      });
+    });
+    zapRadios.forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        if (radio.checked) browser.storage.local.set({ zapLevel: radio.value });
+      });
+    });
+  }
 
   exportBtn.addEventListener('click', exportSessions);
 
