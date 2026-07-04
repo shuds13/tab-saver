@@ -262,12 +262,12 @@ document.addEventListener('DOMContentLoaded', function() {
               closeAllRowMenus();
               explorePanel.style.display = explorePanel.style.display === 'block' ? 'none' : 'block';
             });
+          addMenuItem('Add current tab',
+            'Add only the active tab to this session',
+            function() { addCurrentTabToSession(index); }, 'menu-sep');
           addMenuItem('Add all tabs',
             "Add this window's open tabs to this session (or just the tabs you've selected), skipping any already saved",
             function() { addTabsToSession(index); });
-          addMenuItem('Add current tab',
-            'Add only the active tab to this session',
-            function() { addCurrentTabToSession(index); });
           // Destructive actions, separated and shown in red
           addMenuItem('Overwrite',
             "Replace this session's tabs with this window's tabs",
