@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Tab Session Saver",
-  "version": "2.2",
+  "version": "2.3",
   "description": "Save and restore your browser tab sessions",
   "permissions": [
     "tabs",
