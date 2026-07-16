@@ -258,17 +258,40 @@
       background-color: #e9eefb;
     }
     .explore-tab {
-      padding: 6px 10px 6px 20px;
+      display: flex;
+      align-items: center;
+      padding: 6px 8px 6px 20px;
       font-size: 12px;
+    }
+    .explore-tab:hover {
+      background-color: #d8e2fb;
+    }
+    .explore-tab-title {
+      flex: 1;
       color: #0060df;
       cursor: pointer;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .explore-tab:hover {
-      background-color: #d8e2fb;
+    .explore-tab-title:hover {
       text-decoration: underline;
+    }
+    .explore-tab-del {
+      flex: none;
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      padding: 2px 4px;
+      margin-left: 6px;
+      border-radius: 3px;
+    }
+    .explore-tab-del:hover {
+      color: #d70022;
+      background-color: #fbe9ea;
     }
     /* Briefly flash a just-added tab in the explore list */
     @keyframes exploreTabNew {

@@ -293,17 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const explorePanel = document.createElement('div');
           explorePanel.className = 'explore-panel';
 
-          session.tabs.forEach(function(t) {
-            const tabItem = document.createElement('div');
-            tabItem.className = 'explore-tab';
-            tabItem.textContent = t.title || t.url;
-            tabItem.title = t.url;
-            tabItem.addEventListener('click', function() {
-              browser.tabs.create({ url: t.url, active: false })
-                .catch(error => console.error('Error opening tab:', error));
-            });
-            explorePanel.appendChild(tabItem);
-          });
+          renderExplore(session.tabs);
 
           const exploreItem = addMenuItem('Show tabs  ▸',
             "List this session's tabs to open individually",
@@ -324,32 +314,65 @@ document.addEventListener('DOMContentLoaded', function() {
               const s = list[index];
               if (!s) return;
               setSessionLabel(sessionInfo, s.name, s.tabs.length);
-              explorePanel.innerHTML = '';
-              s.tabs.forEach(function(t) {
-                const tabItem = document.createElement('div');
-                tabItem.className = 'explore-tab';
-                if (prevUrls && !prevUrls.has(t.url)) {
-                  tabItem.classList.add('explore-tab-new');
-                  // Drop the class once the flash finishes so it doesn't replay
-                  // every time the Explore list is reopened.
-                  tabItem.addEventListener('animationend', function() {
-                    tabItem.classList.remove('explore-tab-new');
-                  }, { once: true });
-                }
-                tabItem.textContent = t.title || t.url;
-                tabItem.title = t.url;
-                tabItem.addEventListener('click', function() {
-                  browser.tabs.create({ url: t.url, active: false })
-                    .catch(error => console.error('Error opening tab:', error));
-                });
-                explorePanel.appendChild(tabItem);
+              renderExplore(s.tabs, prevUrls);
+            });
+          }
+
+          // Build the explore list from a tabs array: each row is a clickable
+          // title plus a ✕ to remove that tab. prevUrls (optional) flashes any
+          // tab whose URL wasn't already shown.
+          function renderExplore(tabs, prevUrls) {
+            explorePanel.innerHTML = '';
+            tabs.forEach(function(t, ti) {
+              const tabItem = document.createElement('div');
+              tabItem.className = 'explore-tab';
+              tabItem.dataset.url = t.url;
+              if (prevUrls && !prevUrls.has(t.url)) {
+                tabItem.classList.add('explore-tab-new');
+                // Drop the class once the flash finishes so it doesn't replay
+                // every time the list is reopened.
+                tabItem.addEventListener('animationend', function() {
+                  tabItem.classList.remove('explore-tab-new');
+                }, { once: true });
+              }
+              const title = document.createElement('span');
+              title.className = 'explore-tab-title';
+              title.textContent = t.title || t.url;
+              title.title = t.url;
+              title.addEventListener('click', function() {
+                browser.tabs.create({ url: t.url, active: false })
+                  .catch(error => console.error('Error opening tab:', error));
               });
+              const del = document.createElement('span');
+              del.className = 'explore-tab-del';
+              del.textContent = '✕';
+              del.title = 'Remove this tab from the session';
+              del.addEventListener('click', function() { deleteTabFromSession(ti); });
+              tabItem.appendChild(title);
+              tabItem.appendChild(del);
+              explorePanel.appendChild(tabItem);
+            });
+          }
+
+          // Remove a single tab (by position) from this session, then refresh.
+          function deleteTabFromSession(ti) {
+            browser.storage.local.get('savedSessions').then(function(result) {
+              const list = result.savedSessions || [];
+              const s = list[index];
+              if (!s || !s.tabs || ti < 0 || ti >= s.tabs.length) return;
+              s.tabs.splice(ti, 1);
+              return browser.storage.local.set({ savedSessions: list }).then(function() {
+                return refreshRow();
+              });
+            }).catch(function(error) {
+              console.error('Error removing tab:', error);
+              showNotice('Error removing tab', true);
             });
           }
 
           // URLs currently shown, captured before an add so we can flash new ones
           function currentExploreUrls() {
-            return new Set(Array.from(explorePanel.children).map(el => el.title));
+            return new Set(Array.from(explorePanel.children).map(el => el.dataset.url));
           }
 
           addMenuItem('Add current tab',
