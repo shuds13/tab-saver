@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const saveStatusDiv = document.createElement('div');
   saveStatusDiv.id = 'saveStatus';
   saveStatusDiv.style.marginTop = '5px';
-  saveStatusDiv.style.color = '#666';
   // Insert it right after the div containing the input and save button
   saveButton.parentNode.after(saveStatusDiv);
 
@@ -52,6 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // on a dedicated page (options.html) instead.
   const settingsBtn = document.getElementById('settingsBtn');
   const zapBtn = document.getElementById('zapBtn');
+
+  // Apply the saved theme (light by default)
+  browser.storage.local.get('theme').then(function(res) {
+    document.body.classList.toggle('theme-dark', res.theme === 'dark');
+  });
 
   // Initialize by loading saved sessions
   loadAndDisplaySessions();

@@ -311,6 +311,38 @@
       animation: exploreTabRemove 0.45s ease-out forwards;
       pointer-events: none;
     }
+
+    /* Status line colour (dark theme overrides below) */
+    #saveStatus { color: #666; }
+
+    /* ---- Dark theme (applied when body has .theme-dark) ---- */
+    body.theme-dark { background-color: #202124; color: #e8eaed; }
+    .theme-dark input { background-color: #2a2b2e; color: #e8eaed; border-color: #5f6368; }
+    .theme-dark input:focus { border-color: #8ab4f8; box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.3); }
+    .theme-dark input::placeholder { color: #9aa0a6; }
+    .theme-dark #saveStatus { color: #9aa0a6; }
+    .theme-dark li { border-bottom-color: #3c4043; }
+    .theme-dark .empty-list { color: #9aa0a6; }
+    .theme-dark .save-toggle .slider { background-color: #5f6368; }
+    .theme-dark .icon-btn { color: #9aa0a6; }
+    .theme-dark .icon-btn:hover { background-color: #3c4043; color: #8ab4f8; }
+    .theme-dark .session-item { border-bottom-color: #3c4043; }
+    .theme-dark .session-item:hover { background-color: #2d3648; }
+    .theme-dark .session-name { color: #8ab4f8; }
+    .theme-dark .session-count { color: #9aa0a6; }
+    .theme-dark .options-trigger { color: #9aa0a6; }
+    .theme-dark .options-trigger:hover { background-color: #3c4043; color: #8ab4f8; }
+    .theme-dark .row-menu { background-color: #2a2b2e; border-color: #3c4043; }
+    .theme-dark .row-menu button { background-color: #2a2b2e; color: #e8eaed; }
+    .theme-dark .row-menu button:hover { background-color: #33363a; }
+    .theme-dark .row-menu .menu-sep { border-top-color: #3c4043; }
+    .theme-dark .row-menu .danger { color: #ff6b6b; }
+    .theme-dark .row-menu .danger:hover { background-color: #3a2626; }
+    .theme-dark .explore-panel { background-color: #263041; }
+    .theme-dark .explore-tab:hover { background-color: #2f3d54; }
+    .theme-dark .explore-tab-title { color: #8ab4f8; }
+    .theme-dark .explore-tab-del { color: #9aa0a6; }
+    .theme-dark .explore-tab-del:hover { color: #ff6b6b; background-color: #3a2626; }
   </style>
 </head>
 <body>
@@ -318,7 +350,7 @@
     <h1>Tab Session Saver</h1>
     <div class="header-actions">
       <button id="zapBtn" class="icon-btn" title="Zap duplicate tabs in this window" aria-label="Zap duplicate tabs">&#9889;</button>
-      <button id="settingsBtn" class="icon-btn" title="Backup &amp; restore" aria-label="Backup &amp; restore">&#9881;</button>
+      <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
   </div>
   <div>

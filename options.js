@@ -8,8 +8,28 @@ document.addEventListener('DOMContentLoaded', function() {
   const importFile = document.getElementById('importFile');
   const statusDiv = document.getElementById('status');
   const countDiv = document.getElementById('count');
+  const themeRadios = document.querySelectorAll('input[name="theme"]');
 
   updateCount();
+  initTheme();
+
+  // Load the saved theme, reflect it here, and persist + apply on change
+  function initTheme() {
+    browser.storage.local.get('theme').then(function(res) {
+      const theme = res.theme === 'dark' ? 'dark' : 'light';
+      document.body.classList.toggle('theme-dark', theme === 'dark');
+      themeRadios.forEach(function(radio) {
+        radio.checked = (radio.value === theme);
+      });
+    });
+    themeRadios.forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        if (!radio.checked) return;
+        browser.storage.local.set({ theme: radio.value });
+        document.body.classList.toggle('theme-dark', radio.value === 'dark');
+      });
+    });
+  }
 
   exportBtn.addEventListener('click', exportSessions);
 

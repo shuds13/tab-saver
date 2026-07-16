@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Tab Session Saver — Backup &amp; Restore</title>
+  <title>Tab Session Saver — Settings</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       max-width: 640px;
       margin: 0 auto;
       padding: 20px;
@@ -17,6 +17,10 @@
     h2 {
       font-size: 16px;
       margin-top: 24px;
+    }
+    h3 {
+      font-size: 14px;
+      margin-top: 18px;
     }
     p {
       color: #444;
@@ -44,17 +48,45 @@
     #status.ok { background-color: #e6f4ea; color: #12622b; }
     #status.err { background-color: #fce8e6; color: #a4000f; }
     .count { color: #737373; }
+    .theme-opt {
+      display: block;
+      margin: 8px 0;
+    }
+    .theme-opt input {
+      margin-right: 6px;
+    }
+    hr {
+      margin: 24px 0;
+      border: none;
+      border-top: 1px solid #ddd;
+    }
+
+    /* ---- Dark theme (applied when body has .theme-dark) ---- */
+    body.theme-dark { background-color: #202124; color: #e8eaed; }
+    .theme-dark p { color: #bdc1c6; }
+    .theme-dark .count { color: #9aa0a6; }
+    .theme-dark hr { border-top-color: #3c4043; }
+    .theme-dark #status.ok { background-color: #1e3a28; color: #a8d5b5; }
+    .theme-dark #status.err { background-color: #3a2626; color: #f5b5b5; }
   </style>
 </head>
 <body>
-  <h1>Tab Session Saver — Backup &amp; Restore</h1>
+  <h1>Tab Session Saver — Settings</h1>
+
+  <h2>Theme</h2>
+  <label class="theme-opt"><input type="radio" name="theme" value="light"> <strong>Light</strong></label>
+  <label class="theme-opt"><input type="radio" name="theme" value="dark"> <strong>Dark</strong></label>
+
+  <hr>
+
+  <h2>Backup &amp; Restore</h2>
   <p class="count" id="count"></p>
 
-  <h2>Export</h2>
+  <h3>Export</h3>
   <p>Download all your saved sessions as a JSON file. Keep it somewhere safe as a backup.</p>
   <button id="exportBtn">Export to file</button>
 
-  <h2>Import</h2>
+  <h3>Import</h3>
   <p>Load sessions from a JSON file. Imported sessions are <strong>added</strong> to what
      you already have — nothing is overwritten. Sessions that duplicate an existing one
      (same name and same tabs) are skipped.</p>
