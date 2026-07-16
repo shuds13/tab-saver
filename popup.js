@@ -345,7 +345,9 @@ document.addEventListener('DOMContentLoaded', function() {
               });
               const del = document.createElement('span');
               del.className = 'explore-tab-del';
-              del.textContent = '✕';
+              del.innerHTML =
+                '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">' +
+                '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
               del.title = 'Remove this tab from the session';
               del.addEventListener('click', function() {
                 // Briefly flash the row red, then remove it once the flash ends
