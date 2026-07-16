@@ -347,7 +347,13 @@ document.addEventListener('DOMContentLoaded', function() {
               del.className = 'explore-tab-del';
               del.textContent = '✕';
               del.title = 'Remove this tab from the session';
-              del.addEventListener('click', function() { deleteTabFromSession(ti); });
+              del.addEventListener('click', function() {
+                // Briefly flash the row red, then remove it once the flash ends
+                tabItem.classList.add('explore-tab-removing');
+                tabItem.addEventListener('animationend', function() {
+                  deleteTabFromSession(ti);
+                }, { once: true });
+              });
               tabItem.appendChild(title);
               tabItem.appendChild(del);
               explorePanel.appendChild(tabItem);

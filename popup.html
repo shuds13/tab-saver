@@ -301,6 +301,15 @@
     .explore-tab-new {
       animation: exploreTabNew 1.6s ease-out;
     }
+    /* Briefly flash red before a removed tab disappears */
+    @keyframes exploreTabRemove {
+      from { background-color: #f3c0c4; opacity: 1; }
+      to   { background-color: #f3c0c4; opacity: 0; }
+    }
+    .explore-tab-removing {
+      animation: exploreTabRemove 0.45s ease-out forwards;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
