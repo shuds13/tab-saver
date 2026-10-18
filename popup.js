@@ -188,10 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .then(function(tabsToSave) {
         // Extract needed tab information
-        const tabsData = tabsToSave.map(tab => ({
-          url: tab.url,
-          title: tab.title
-        }));
+        const tabsData = tabsToSave.map(tabData);
 
         // Create session object
         const sessionData = {
@@ -247,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     browser.tabs.query({ currentWindow: true, active: true })
       .then(function(tabs) {
-        const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
+        const tabsData = tabs.map(tabData);
         const sessionData = {
           name: sessionName,
           date: new Date().toISOString(),
@@ -341,6 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 browser.tabs.create({ url: t.url, active: false })
                   .catch(error => console.error('Error opening tab:', error));
               });
+              tabItem.appendChild(makeFavicon(t));
               tabItem.appendChild(title);
               matchesDiv.appendChild(tabItem);
             });
@@ -450,6 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   deleteTabFromSession(ti);
                 }, { once: true });
               });
+              tabItem.appendChild(makeFavicon(t));
               tabItem.appendChild(title);
               tabItem.appendChild(del);
               explorePanel.appendChild(tabItem);
@@ -637,6 +636,25 @@ document.addEventListener('DOMContentLoaded', function() {
           });
   }
 
+  // The fields kept for each saved tab
+  function tabData(tab) {
+      return { url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl };
+  }
+
+  // Site icon for a saved tab. Tabs saved before icons were stored, or whose
+  // icon can't be loaded, get an empty placeholder so titles stay aligned.
+  function makeFavicon(t) {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'tab-favicon';
+      if (!t.favIconUrl) return placeholder;
+      const img = document.createElement('img');
+      img.className = 'tab-favicon';
+      img.src = t.favIconUrl;
+      img.alt = '';
+      img.addEventListener('error', function() { img.replaceWith(placeholder); });
+      return img;
+  }
+
   // Set a session row's label: name in the link colour, count muted grey.
   function setSessionLabel(el, name, count) {
       el.textContent = '';
@@ -722,7 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function overwriteSession(index) {
       return queryTabsToSave()
           .then(function(tabs) {
-              const tabsData = tabs.map(tab => ({ url: tab.url, title: tab.title }));
+              const tabsData = tabs.map(tabData);
               return browser.storage.local.get('savedSessions').then(function(result) {
                   const savedSessions = result.savedSessions || [];
                   if (index < 0 || index >= savedSessions.length) return;
@@ -788,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add tabs: merge the current window's tabs into a session.
   function addTabsToSession(index) {
       return queryTabsToSave()
-          .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title }))))
+          .then(tabs => mergeTabsIntoSession(index, tabs.map(tabData)))
           .catch(function(error) {
               console.error('Error adding tabs to session:', error);
               showNotice('Error adding tabs', true);
@@ -798,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add current tab: merge only the active tab of the current window.
   function addCurrentTabToSession(index, quiet) {
       return browser.tabs.query({ currentWindow: true, active: true })
-          .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title })), quiet))
+          .then(tabs => mergeTabsIntoSession(index, tabs.map(tabData), quiet))
           .catch(function(error) {
               console.error('Error adding current tab to session:', error);
               showNotice('Error adding current tab', true);
