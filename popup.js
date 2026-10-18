@@ -470,6 +470,43 @@ document.addEventListener('DOMContentLoaded', function() {
             return new Set(Array.from(explorePanel.children).map(el => el.dataset.url));
           }
 
+          // Swap the session label for a text field. Enter or clicking away
+          // saves; Esc cancels. An empty or unchanged name is ignored.
+          function startRename() {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'rename-input';
+            input.value = currentName;
+            sessionInfo.textContent = '';
+            sessionInfo.appendChild(input);
+            input.focus();
+            input.select();
+
+            let done = false;
+            function finish(save) {
+              if (done) return;
+              done = true;
+              const newName = input.value.trim();
+              if (!save || !newName || newName === currentName) {
+                setSessionLabel(sessionInfo, currentName, currentTabs.length);
+                return;
+              }
+              renameSession(index, newName).then(function() { return refreshRow(); });
+            }
+            // Keep clicks in the field from opening the session
+            input.addEventListener('click', function(event) { event.stopPropagation(); });
+            input.addEventListener('keydown', function(event) {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                finish(true);
+              } else if (event.key === 'Escape') {
+                event.preventDefault();
+                finish(false);
+              }
+            });
+            input.addEventListener('blur', function() { finish(true); });
+          }
+
           addMenuItem('Add current tab',
             'Add only the active tab to this session',
             function() {
@@ -482,6 +519,12 @@ document.addEventListener('DOMContentLoaded', function() {
               const before = currentExploreUrls();
               addTabsToSession(index).then(function() { return refreshRow(before); });
             });
+          addMenuItem('Rename',
+            'Rename this session',
+            function() {
+              closeAllRowMenus();
+              startRename();
+            }, 'menu-sep');
           // Destructive actions, separated and shown in red
           addMenuItem('Overwrite',
             "Replace this session's tabs with this window's tabs",
@@ -527,6 +570,21 @@ document.addEventListener('DOMContentLoaded', function() {
           })
           .then(() => loadAndDisplaySessions())
           .catch(error => console.error('Error reordering sessions:', error));
+  }
+
+  // Rename the session at the given index.
+  function renameSession(index, newName) {
+      return browser.storage.local.get('savedSessions')
+          .then(function(result) {
+              const savedSessions = result.savedSessions || [];
+              if (!savedSessions[index]) return;
+              savedSessions[index].name = newName;
+              return browser.storage.local.set({ savedSessions });
+          })
+          .catch(function(error) {
+              console.error('Error renaming session:', error);
+              showNotice('Error renaming session', true);
+          });
   }
 
   // Function to open a session in a new window (reads fresh from storage by
