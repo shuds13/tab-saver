@@ -312,6 +312,36 @@
       pointer-events: none;
     }
 
+    /* Search: icon on the Saved Sessions heading reveals a filter field */
+    .sessions-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
+    .sessions-header h2 {
+      margin: 0;
+    }
+    #searchInput {
+      display: none;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 8px 0 4px;
+    }
+    .search-matches {
+      display: none;
+      margin-top: 4px;
+      background-color: #e9eefb;
+    }
+    .search-matches .explore-tab {
+      padding-left: 12px;
+    }
+    .search-empty {
+      color: #737373;
+      font-style: italic;
+      padding: 6px 0;
+    }
+
     /* Status line colour (dark theme overrides below) */
     #saveStatus { color: #666; }
 
@@ -342,6 +372,8 @@
     .theme-dark .explore-tab:hover { background-color: #2f3d54; }
     .theme-dark .explore-tab-title { color: #8ab4f8; }
     .theme-dark .explore-tab-del { color: #9aa0a6; }
+    .theme-dark .search-matches { background-color: #263041; }
+    .theme-dark .search-empty { color: #9aa0a6; }
     .theme-dark .explore-tab-del:hover { color: #ff6b6b; background-color: #3a2626; }
   </style>
 </head>
@@ -357,7 +389,13 @@
     <input type="text" id="sessionName" placeholder="Enter session name" />
     <button id="saveBtn">Save</button>
   </div>
-  <h2>Saved Sessions</h2>
+  <div class="sessions-header">
+    <h2>Saved Sessions</h2>
+    <button id="searchBtn" class="icon-btn" title="Search tabs" aria-label="Search tabs">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+    </button>
+  </div>
+  <input type="text" id="searchInput" placeholder="Search sessions and tabs" />
   <div id="undoContainer"></div>
   <div id="sessionsList"></div>
   <script src="popup.js"></script>

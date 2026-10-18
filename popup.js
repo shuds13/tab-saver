@@ -57,6 +57,47 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.toggle('theme-dark', res.theme === 'dark');
   });
 
+  // Search: the icon on the Saved Sessions heading shows a filter field.
+  // Typing filters sessions by name and by their tabs' titles/URLs, listing
+  // the matching tabs under each session. Clicking the icon again clears it.
+  const searchBtn = document.getElementById('searchBtn');
+  const searchInput = document.getElementById('searchInput');
+  // One filter per rendered session row; each takes the query and returns
+  // whether the row is shown. Rebuilt by loadAndDisplaySessions.
+  let sessionFilters = [];
+
+  searchBtn.addEventListener('click', function() {
+    const isOpen = searchInput.style.display === 'block';
+    searchInput.style.display = isOpen ? 'none' : 'block';
+    if (isOpen) {
+      searchInput.value = '';
+      applySearch();
+    } else {
+      searchInput.focus();
+    }
+  });
+  searchInput.addEventListener('input', applySearch);
+
+  function applySearch() {
+    const query = searchInput.value.trim().toLowerCase();
+    let shown = 0;
+    sessionFilters.forEach(function(filter) {
+      if (filter(query)) shown++;
+    });
+    let empty = document.getElementById('searchEmpty');
+    if (query && sessionFilters.length > 0 && shown === 0) {
+      if (!empty) {
+        empty = document.createElement('div');
+        empty.id = 'searchEmpty';
+        empty.className = 'search-empty';
+        empty.textContent = 'No matching sessions or tabs';
+        sessionsListDiv.appendChild(empty);
+      }
+    } else if (empty) {
+      empty.remove();
+    }
+  }
+
   // Initialize by loading saved sessions
   loadAndDisplaySessions();
   updateSaveStatus();
@@ -234,6 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function loadAndDisplaySessions() {
     // Clear the list
     sessionsListDiv.innerHTML = '';
+    sessionFilters = [];
 
     // Get saved sessions from storage
     browser.storage.local.get('savedSessions')
@@ -268,6 +310,44 @@ document.addEventListener('DOMContentLoaded', function() {
           sessionInfo.title = 'Open in a new window';
           sessionInfo.addEventListener('click', function() {
             openSessionInNewWindow(index);
+          });
+
+          // Tabs matching the current search, shown under the row while searching
+          const matchesDiv = document.createElement('div');
+          matchesDiv.className = 'search-matches';
+          let currentName = session.name;
+          let currentTabs = session.tabs;
+
+          sessionFilters.push(function(query) {
+            matchesDiv.innerHTML = '';
+            if (!query) {
+              listItem.style.display = '';
+              matchesDiv.style.display = 'none';
+              return true;
+            }
+            const nameMatch = currentName.toLowerCase().includes(query);
+            const tabMatches = currentTabs.filter(function(t) {
+              return (t.title || '').toLowerCase().includes(query) ||
+                     (t.url || '').toLowerCase().includes(query);
+            });
+            tabMatches.forEach(function(t) {
+              const tabItem = document.createElement('div');
+              tabItem.className = 'explore-tab';
+              const title = document.createElement('span');
+              title.className = 'explore-tab-title';
+              title.textContent = t.title || t.url;
+              title.title = t.url;
+              title.addEventListener('click', function() {
+                browser.tabs.create({ url: t.url, active: false })
+                  .catch(error => console.error('Error opening tab:', error));
+              });
+              tabItem.appendChild(title);
+              matchesDiv.appendChild(tabItem);
+            });
+            matchesDiv.style.display = tabMatches.length > 0 ? 'block' : 'none';
+            const visible = nameMatch || tabMatches.length > 0;
+            listItem.style.display = visible ? '' : 'none';
+            return visible;
           });
 
           // Options button (⋮) toggles this row's action menu
@@ -317,8 +397,11 @@ document.addEventListener('DOMContentLoaded', function() {
               const list = result.savedSessions || [];
               const s = list[index];
               if (!s) return;
+              currentName = s.name;
+              currentTabs = s.tabs;
               setSessionLabel(sessionInfo, s.name, s.tabs.length);
               renderExplore(s.tabs, prevUrls);
+              applySearch();
             });
           }
 
@@ -416,12 +499,14 @@ document.addEventListener('DOMContentLoaded', function() {
           row.appendChild(sessionInfo);
           row.appendChild(optionsButton);
           listItem.appendChild(row);
+          listItem.appendChild(matchesDiv);
           listItem.appendChild(menu);
           sessionList.appendChild(listItem);
         });
 
         // Add list to the sessions div
         sessionsListDiv.appendChild(sessionList);
+        applySearch();
       })
       .catch(function(error) {
         console.error('Error loading sessions:', error);
