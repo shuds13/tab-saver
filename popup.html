@@ -219,6 +219,38 @@
       background-color: #e0e0e0;
       color: #0060df;
     }
+    .add-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-left: 10px;
+      font-size: 18px;
+      font-weight: 300;
+      line-height: 1;
+      color: #aaa;
+      background: none;
+      border: none;
+      padding: 0;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .add-trigger:hover {
+      background-color: #e0e0e0;
+      color: #0060df;
+    }
+    .add-trigger + .options-trigger {
+      margin-left: 2px;
+    }
+    /* Brief green flash on a session row after + adds a tab */
+    @keyframes sessionAdded {
+      from { background-color: rgba(52, 168, 83, 0.3); }
+      to   { background-color: transparent; }
+    }
+    .session-item.session-added {
+      animation: sessionAdded 1s ease-out;
+    }
     /* Inline action menu opened from the Options button */
     .row-menu {
       display: none;
@@ -368,6 +400,8 @@
     .theme-dark .session-name { color: #8ab4f8; }
     .theme-dark .session-count { color: #9aa0a6; }
     .theme-dark .options-trigger { color: #9aa0a6; }
+    .theme-dark .add-trigger { color: #6f7378; }
+    .theme-dark .add-trigger:hover { background-color: #3c4043; color: #8ab4f8; }
     .theme-dark .options-trigger:hover { background-color: #3c4043; color: #8ab4f8; }
     .theme-dark .row-menu { background-color: #2a2b2e; border-color: #3c4043; }
     .theme-dark .row-menu button { background-color: #2a2b2e; color: #e8eaed; }

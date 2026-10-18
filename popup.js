@@ -350,6 +350,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return visible;
           });
 
+          // + button: quick way to add the current tab to this session
+          const addButton = document.createElement('button');
+          addButton.className = 'add-trigger';
+          addButton.textContent = '+';
+          addButton.title = 'Add current tab to this session';
+          addButton.setAttribute('aria-label', 'Add current tab to this session');
+
           // Options button (⋮) toggles this row's action menu
           const optionsButton = document.createElement('button');
           optionsButton.className = 'options-trigger';
@@ -533,6 +540,23 @@ document.addEventListener('DOMContentLoaded', function() {
             'Delete this session',
             function() { deleteSession(index); }, 'danger');
 
+          // Flashes the row green on success; a notice appears only if the
+          // tab was already in the session.
+          addButton.addEventListener('click', function() {
+            const before = currentExploreUrls();
+            addCurrentTabToSession(index, true).then(function(result) {
+              if (result && result.added > 0) {
+                listItem.classList.remove('session-added');
+                void listItem.offsetWidth; // restart the animation on repeat clicks
+                listItem.classList.add('session-added');
+              }
+              return refreshRow(before);
+            });
+          });
+          listItem.addEventListener('animationend', function(event) {
+            if (event.animationName === 'sessionAdded') listItem.classList.remove('session-added');
+          });
+
           optionsButton.addEventListener('click', function() {
             const isOpen = menu.style.display === 'block';
             closeAllRowMenus();
@@ -540,6 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
 
           row.appendChild(sessionInfo);
+          row.appendChild(addButton);
           row.appendChild(optionsButton);
           listItem.appendChild(row);
           listItem.appendChild(matchesDiv);
@@ -728,7 +753,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Merge a list of tabs into a session, skipping URLs it already has.
-  function mergeTabsIntoSession(index, tabsData) {
+  // With quiet set, the notice is shown only when nothing was added.
+  // Resolves to { added, skipped }.
+  function mergeTabsIntoSession(index, tabsData, quiet) {
       return browser.storage.local.get('savedSessions').then(function(result) {
           const savedSessions = result.savedSessions || [];
           if (index < 0 || index >= savedSessions.length) return;
@@ -747,8 +774,13 @@ document.addEventListener('DOMContentLoaded', function() {
           });
           session.date = new Date().toISOString();
           return browser.storage.local.set({ savedSessions }).then(function() {
-              showNotice(`Added ${added} tab${added === 1 ? '' : 's'} to "${session.name}"` +
-                  (skipped ? `, skipped ${skipped} already saved` : ''));
+              if (quiet && added === 0) {
+                  showNotice(`Already in "${session.name}"`);
+              } else if (!quiet) {
+                  showNotice(`Added ${added} tab${added === 1 ? '' : 's'} to "${session.name}"` +
+                      (skipped ? `, skipped ${skipped} already saved` : ''));
+              }
+              return { added, skipped };
           });
       });
   }
@@ -764,9 +796,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Add current tab: merge only the active tab of the current window.
-  function addCurrentTabToSession(index) {
+  function addCurrentTabToSession(index, quiet) {
       return browser.tabs.query({ currentWindow: true, active: true })
-          .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title }))))
+          .then(tabs => mergeTabsIntoSession(index, tabs.map(tab => ({ url: tab.url, title: tab.title })), quiet))
           .catch(function(error) {
               console.error('Error adding current tab to session:', error);
               showNotice('Error adding current tab', true);
