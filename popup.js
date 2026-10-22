@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 browser.tabs.create({ url: t.url, active: false })
                   .catch(error => console.error('Error opening tab:', error));
               });
-              tabItem.appendChild(makeFavicon(t));
+              // tabItem.appendChild(makeFavicon(t));  // favicons disabled for now
               tabItem.appendChild(title);
               matchesDiv.appendChild(tabItem);
             });
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   deleteTabFromSession(ti);
                 }, { once: true });
               });
-              tabItem.appendChild(makeFavicon(t));
+              // tabItem.appendChild(makeFavicon(t));  // favicons disabled for now
               tabItem.appendChild(title);
               tabItem.appendChild(del);
               explorePanel.appendChild(tabItem);
@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // The fields kept for each saved tab
   function tabData(tab) {
-      return { url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl };
+      return { url: tab.url, title: tab.title };  // favIconUrl disabled for now
   }
 
   // Site icon for a saved tab. Tabs saved before icons were stored, or whose
